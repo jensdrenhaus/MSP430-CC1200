@@ -12,6 +12,7 @@ void main(void) {
     TA0CTL = TASSEL__SMCLK | MC__UP | ID__8;          // SMCLK/8 , UP mode
     TA0CCR0 =50000;
 
+    // test kommentar ;)
 
     // Configure GPIO
     P1OUT &= 0x00;					// Shut down everything
