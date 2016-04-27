@@ -2,19 +2,25 @@
 #include <driverlib.h>
 #include "msp430fr5969.h"
 
+// Globals
+int pressed = 0;
+
 
 
 void main(void) {
     WDTCTL = WDTPW | WDTHOLD;			// Stop watchdog timer
 
     // Configure Timer
-    TA0CCTL0 = CCIE;                // TACCR0 interrupt enabled
-    TA0CTL = TASSEL__SMCLK | MC__UP | ID__8;          // SMCLK/8 , UP mode
-    TA0CCR0 =50000;
 
-    // test kommentar ;)
+    TA0CTL |= (TASSEL__SMCLK | MC__UP | ID__8);          // SMCLK/8 , UP mode
+    TA0CTL |= TACLR;                 // clear to acticate new clock settings
+    TA0CCR0 = 5000; 				 // SMCLK/8/10000 = 25Hz => 40ms
+    TA0CCTL0 &= ~CCIE;               // TACCR0 interrupt disabled
 
     // Configure GPIO
+
+    PM5CTL0	&=	~LOCKLPM5;			// Disable the GPIO power-on default high-impedance mode
+
     P1OUT &= 0x00;					// Shut down everything
     P1DIR &= 0x00;
     P4OUT &= 0x00;					// Shut down everything
@@ -31,12 +37,8 @@ void main(void) {
     P1IFG &= ~BIT1;                 // clear P1.1 interrupt flag
 
 
-    PM5CTL0	&=	~LOCKLPM5;			// Disable the GPIO power-on default high-impedance mode
 
     _EINT();						// Global interrupt enable
-
-    P4OUT |= BIT6;					// Red LED on
-    P1OUT |= BIT0;					// Green LED on
 
     while(1)
     {
@@ -44,21 +46,33 @@ void main(void) {
     }
 }
 
-#pragma vector=TIMER0_A0_VECTOR
-__interrupt void Timer0_A0(void)
-{
-	P4OUT ^= BIT6;
-}
-
 
 #pragma vector=PORT1_VECTOR
 __interrupt void Port_1(void)
 {
-        P1OUT	^=	BIT0;	// Toggle LED
-        P1IFG	&= ~BIT1;	// Clear Interrupt Flag
-		// Start Timer
+ 	P1IE &=	~BIT1;					// Disable Interrupt on P1.1
+	P1IFG &= ~BIT1;                 // clear P1.1 interrupt flag
+	TA0CCTL0 |= CCIE;               // TACCR0 interrupt enabled
+	TA0CTL |= TACLR;                // start Timer TA0
+	pressed = 1;                    // save buttonstate
 }
 
+#pragma vector=TIMER0_A0_VECTOR
+__interrupt void Timer0_A0(void)
+{
+	// check if button is still pressed
+	if (!(P1IN & BIT1) && pressed) {
+		TA0CTL |= TACLR;            // reset Timer TA0
+	}
+	// button released ?
+	else if ((P1IN & BIT1) && pressed) {
+		pressed = 0;
+		P1OUT ^= BIT0;				// toggel green LED
+		TA0CCTL0 &= ~CCIE;          // TACCR0 interrupt disabled
+		P1IFG &= ~BIT1;             // clear P1.1 interrupt flag
+		P1IE |=	BIT1;				// Enable Interrupt on P1.1
+	}
+}
 
 
 
