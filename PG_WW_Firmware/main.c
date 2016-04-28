@@ -24,6 +24,23 @@ void main(void) {
     TA1CCR0 = 62500; 				 // SMCLK/8/62500 = 2Hz => 0,5s
     TA1CCTL0 |= CCIE;                // TACCR0 interrupt enabled
 
+    // Configure UART A0
+
+     P2SEL1 |= BIT0 | BIT1;          // Set port function to UART
+     P2SEL0 &= ~(BIT0 | BIT1);		 //	Set port function to UART
+
+     UCA0CTLW0 = UCSWRST;            // Put eUSCI in reset
+     UCA0CTLW0 |= UCSSEL__SMCLK;     // CLK = SMCLK
+     // Baud Rate calculation
+     // 1000000/(16*9600) = 6.510
+     // Fractional portion = 0.510
+     // User's Guide Table 21-4: UCBRSx = 0xAA
+     // UCBRFx = int ( (6.510-6)*16) = 8
+     UCA0BR0 = 6;                    // 8000000/16/9600
+     UCA0BR1 = 0x00;
+     UCA0MCTLW |= UCOS16 | UCBRF_8;
+     UCA0CTLW0 &= ~UCSWRST;          // Initialize eUSCI
+
     // Configure GPIO
 
     PM5CTL0	&=	~LOCKLPM5;			// Disable the GPIO power-on default high-impedance mode
@@ -86,6 +103,10 @@ __interrupt void Timer0_A0(void)
 __interrupt void Timer0_A1(void)
 {
 	P4OUT ^= BIT6;				// toggel red LED
+	while(!(UCA0IFG&UCTXIFG)){
+		// Buffer full
+	}
+	UCA0TXBUF = 'x';
 }
 
 
