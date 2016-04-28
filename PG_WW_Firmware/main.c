@@ -10,12 +10,19 @@ int pressed = 0;
 void main(void) {
     WDTCTL = WDTPW | WDTHOLD;			// Stop watchdog timer
 
-    // Configure Timer
+    // Configure Timer A0 used for debouncing
 
     TA0CTL |= (TASSEL__SMCLK | MC__UP | ID__8);          // SMCLK/8 , UP mode
     TA0CTL |= TACLR;                 // clear to acticate new clock settings
-    TA0CCR0 = 5000; 				 // SMCLK/8/10000 = 25Hz => 40ms
+    TA0CCR0 = 5000; 				 // SMCLK/8/5000 = 25Hz => 40ms
     TA0CCTL0 &= ~CCIE;               // TACCR0 interrupt disabled
+
+    // Configure Timer A1 used for periodic actions
+
+    TA1CTL |= (TASSEL__SMCLK | MC__UP | ID__8);          // SMCLK/8 , UP mode
+    TA1CTL |= TACLR;                 // clear to acticate new clock settings
+    TA1CCR0 = 62500; 				 // SMCLK/8/62500 = 2Hz => 0,5s
+    TA1CCTL0 |= CCIE;                // TACCR0 interrupt enabled
 
     // Configure GPIO
 
@@ -74,6 +81,12 @@ __interrupt void Timer0_A0(void)
 	}
 }
 
+
+#pragma vector=TIMER1_A0_VECTOR
+__interrupt void Timer0_A1(void)
+{
+	P4OUT ^= BIT6;				// toggel red LED
+}
 
 
 
