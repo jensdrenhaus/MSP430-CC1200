@@ -5,6 +5,8 @@
 // Globals
 int pressed = 0;
 
+// Defines
+
 
 
 void main(void) {
@@ -37,8 +39,8 @@ void main(void) {
      // User's Guide Table 21-4: UCBRSx = 0xAA
      // UCBRFx = int ( (6.510-6)*16) = 8
      UCA0BR0 = 6;                    // 8000000/16/9600
-     UCA0BR1 = 0x00;
-     UCA0MCTLW |= UCOS16 | UCBRF_8;
+     UCA0BR1 = 0x00;				 // UCA0BR is a word register, set high byte
+     UCA0MCTLW |= UCOS16 | UCBRF_8 | 0xAA00;
      UCA0CTLW0 &= ~UCSWRST;          // Initialize eUSCI
 
     // Configure GPIO
@@ -90,8 +92,16 @@ __interrupt void Timer0_A0(void)
 	}
 	// button released ?
 	else if ((P1IN & BIT1) && pressed) {
-		pressed = 0;
+
+		// ### button released action ###
+		while(!(UCA0IFG&UCTXIFG));
+		UCA0TXBUF = 0x0A;			// send NL
+		while(!(UCA0IFG&UCTXIFG));
+		UCA0TXBUF = 0x0D;			// send CR
 		P1OUT ^= BIT0;				// toggel green LED
+		// ###############################
+
+		pressed = 0;
 		TA0CCTL0 &= ~CCIE;          // TACCR0 interrupt disabled
 		P1IFG &= ~BIT1;             // clear P1.1 interrupt flag
 		P1IE |=	BIT1;				// Enable Interrupt on P1.1
@@ -102,11 +112,25 @@ __interrupt void Timer0_A0(void)
 #pragma vector=TIMER1_A0_VECTOR
 __interrupt void Timer0_A1(void)
 {
-	P4OUT ^= BIT6;				// toggel red LED
-	while(!(UCA0IFG&UCTXIFG)){
-		// Buffer full
+	static int num = 0x30;
+	static int tick = 1;        // set state for full secound
+
+	if (tick) {
+		while(!(UCA0IFG&UCTXIFG));
+		UCA0TXBUF = num;
+		num++;
+		if (num > '9') {
+			num = 0x30;
+			while(!(UCA0IFG&UCTXIFG));
+			UCA0TXBUF = 0x0A;			// send NL
+			while(!(UCA0IFG&UCTXIFG));
+			UCA0TXBUF = 0x0D;			// send CR
+		}
 	}
-	UCA0TXBUF = 'x';
+
+	tick ^= 1;                   // toggel tick state
+	P4OUT ^= BIT6;				// toggel red LED
+
 }
 
 
