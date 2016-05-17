@@ -1,13 +1,27 @@
 #include "msp430fr5969.h"
+//#include <string.h>
 
 // Globals
 int pressed = 0;
+const int id = 42;
 
 // Defines
+
+typedef struct{
+	char string [20];
+	int length;
+} Data;
+Data data = {"hallo", 5};
+
+// Prototypes
+void send_string(char *string, int lenght);
+
+
 
 
 
 void main(void) {
+
     WDTCTL = WDTPW | WDTHOLD;           // Stop watchdog timer
 
     //#########################################################################
@@ -47,6 +61,7 @@ void main(void) {
     UCA0MCTLW |= UCOS16 | UCBRF_8 | 0xAA00;
     UCA0CTLW0 &= ~UCSWRST;          // Initialize eUSCI
 
+
     //#########################################################################
     // Configure UART A1 for measurement datat input
     //#########################################################################
@@ -74,7 +89,6 @@ void main(void) {
     PM5CTL0	&=	~LOCKLPM5;			// Disable the GPIO power-on default
     								//               high-impedance mode
 
-    // Configure UART A0
 
     P2SEL1 |= BIT0 | BIT1;          // Set port function to UART
     P2SEL0 &= ~(BIT0 | BIT1);       // Set port function to UART
@@ -106,6 +120,7 @@ void main(void) {
 
 
     _EINT();                        // Global interrupt enable
+
 
     while(1)
     {
@@ -164,11 +179,14 @@ __interrupt void Timer0_A1(void)
 	static int tick = 1;        // set state for full secound
 
 	if (tick) {
+
+		while(!(UCA1IFG&UCTXIFG));
+				UCA1TXBUF = 'x';
+
 		while(!(UCA0IFG&UCTXIFG));
 		UCA0TXBUF = num;
 		num++;
-		while(!(UCA1IFG&UCTXIFG));
-		UCA1TXBUF = 'x';
+
 		if (num > '9') {
 			num = 0x30;
 			while(!(UCA0IFG&UCTXIFG));
@@ -206,25 +224,51 @@ __interrupt void USCI_A1_ISR(void)
 
 
 
-
+//#############################################################################
+// UART A1 ISR for communication intup
+//#############################################################################
 #pragma vector=USCI_A0_VECTOR
 __interrupt void USCIA0RX_ISR(void)
 {
-    char received = UCA0RXBUF;
+	switch(__even_in_range(UCA0IV, USCI_UART_UCTXCPTIFG)) // check UART IFGs
+	  {
+	    case USCI_NONE: break;
+	    case USCI_UART_UCRXIFG:
+	    	send_string(data.string, data.length);
+//	      data.string[data.length] = UCA0RXBUF;
+//	      data.length++;
+//	      if (UCA0RXBUF == 0x0A) { // new line
+//	    	  send_string(data.string, data.length);
+//	    	  data.length = 0;
+//	      }
+	      break;
+	    case USCI_UART_UCTXIFG: break;
+	    case USCI_UART_UCSTTIFG: break;
+	    case USCI_UART_UCTXCPTIFG: break;
+	  }
+//    char received = UCA0RXBUF;
+//
+//    while(!(UCA0IFG&UCTXIFG))
+//    {
+//        UCA0TXBUF = received;
+//    }
+//
+//    if (received=='g')
+//    {
+//        P1OUT ^= BIT0;      // toggle green LED
+//    }
+//    else if (received == 'r')
+//    {
+//        P4OUT   ^=  BIT6;   // toggle red LED
+//
+//    }
 
-    while(!(UCA0IFG&UCTXIFG))
-    {
-        UCA0TXBUF = received;
-    }
+}
 
-    if (received=='g')
-    {
-        P1OUT ^= BIT0;      // toggle green LED
-    }
-    else if (received == 'r')
-    {
-        P4OUT   ^=  BIT6;   // toggle red LED
-
-    }
-
+void send_string(char *string, int lenght) {
+	int pos;
+	for (pos = 0; pos <= lenght; pos++) {
+		while(!(UCA0IFG&UCTXIFG));
+				UCA0TXBUF = string[pos];
+	}
 }
