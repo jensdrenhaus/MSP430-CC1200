@@ -1,20 +1,24 @@
 #include "msp430fr5969.h"
-//#include <string.h>
+#include <string.h>
 
 // Globals
 int pressed = 0;
-const int id = 42;
+const int MY_BOX_ID = 42;
 
 // Defines
 
 typedef struct{
 	char string [20];
-	int length;
 } Data;
-Data data = {"hallo", 5};
+Data data = {""};
+
+typedef struct{
+	double weight;
+}Sensor_Data;
+Sensor_Data sensor_data = {0.0};
 
 // Prototypes
-void send_string(char *string, int lenght);
+void send_string(char *string);
 
 
 
@@ -180,20 +184,6 @@ __interrupt void Timer0_A1(void)
 
 	if (tick) {
 
-		while(!(UCA1IFG&UCTXIFG));
-				UCA1TXBUF = 'x';
-
-		while(!(UCA0IFG&UCTXIFG));
-		UCA0TXBUF = num;
-		num++;
-
-		if (num > '9') {
-			num = 0x30;
-			while(!(UCA0IFG&UCTXIFG));
-			UCA0TXBUF = 0x0A;			// send NL
-			while(!(UCA0IFG&UCTXIFG));
-			UCA0TXBUF = 0x0D;			// send CR
-		}
 	}
 
 	tick ^= 1;                   // toggel tick state
@@ -234,41 +224,25 @@ __interrupt void USCIA0RX_ISR(void)
 	  {
 	    case USCI_NONE: break;
 	    case USCI_UART_UCRXIFG:
-	    	send_string(data.string, data.length);
-//	      data.string[data.length] = UCA0RXBUF;
-//	      data.length++;
-//	      if (UCA0RXBUF == 0x0A) { // new line
-//	    	  send_string(data.string, data.length);
-//	    	  data.length = 0;
-//	      }
-	      break;
+	    	strcat(data.string, &UCA0RXBUF);
+			if(UCA0RXBUF == '\0'){
+				send_string(data.string);
+				strcpy(data.string,"");
+			}
+	        break;
 	    case USCI_UART_UCTXIFG: break;
 	    case USCI_UART_UCSTTIFG: break;
 	    case USCI_UART_UCTXCPTIFG: break;
 	  }
-//    char received = UCA0RXBUF;
-//
-//    while(!(UCA0IFG&UCTXIFG))
-//    {
-//        UCA0TXBUF = received;
-//    }
-//
-//    if (received=='g')
-//    {
-//        P1OUT ^= BIT0;      // toggle green LED
-//    }
-//    else if (received == 'r')
-//    {
-//        P4OUT   ^=  BIT6;   // toggle red LED
-//
-//    }
 
 }
 
-void send_string(char *string, int lenght) {
-	int pos;
-	for (pos = 0; pos <= lenght; pos++) {
+void send_string(char *string) {
+	int n = 0;
+	while(1) {
 		while(!(UCA0IFG&UCTXIFG));
-				UCA0TXBUF = string[pos];
+		UCA0TXBUF = string[n];
+		if (string[n] == '\0') break;
+		n++;
 	}
 }
