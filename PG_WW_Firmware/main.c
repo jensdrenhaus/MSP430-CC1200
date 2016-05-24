@@ -20,7 +20,7 @@ Sensor_Data sensor_data = {0.0};
 // Prototypes
 void send_string(char *string);
 
-
+void interpreter(char *string);
 
 
 
@@ -225,7 +225,7 @@ __interrupt void USCIA0RX_ISR(void)
 	    case USCI_NONE: break;
 	    case USCI_UART_UCRXIFG:
 	    	strcat(data.string, &UCA0RXBUF);
-			if(UCA0RXBUF == '\0'){
+			if(UCA0RXBUF == '\n'){
 				send_string(data.string);
 				strcpy(data.string,"");
 			}
@@ -242,7 +242,8 @@ void send_string(char *string) {
 	while(1) {
 		while(!(UCA0IFG&UCTXIFG));
 		UCA0TXBUF = string[n];
-		if (string[n] == '\0') break;
 		n++;
+		if (string[n] == '\0') break;
+
 	}
 }
