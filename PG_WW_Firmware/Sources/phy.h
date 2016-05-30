@@ -33,11 +33,11 @@
 
 
 //#############################################################################
-// callback function
-//typedef void (*Callback)(arg*);
+// callback function definition
+typedef void (*PHY_CB)(char* string);
 
 //#############################################################################
-// functions (prototypes)
+// function prototypes
 
 /*------------------------------------------------------------------------------
 | name_somefunction  -- short explaination
@@ -49,7 +49,7 @@
 |     ---
 |
  -----------------------------------------------------------------------------*/
-extern void PHY_init();
+extern void PHY_init(PHY_CB callback);
 
 extern void PHY_send(char *string);
 

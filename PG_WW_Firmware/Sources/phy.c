@@ -15,8 +15,8 @@
 //#############################################################################
 // globals
 
-static char buf [PHY_MAX_BUF];
-
+static char      buf [PHY_MAX_BUF];
+static PHY_CB    g_callback;
 
 
 
@@ -37,11 +37,12 @@ static void foo();
 //!  PUBLIC PHY_init()
 //!
 ////////////////////////////////////////////////////////////////////////////
-void PHY_init() {
+void PHY_init(PHY_CB callback) {
 
 	// ------------------------------------
-	// important comment
+	// save funtion ptr to callback func.
 	// ------------------------------------
+	g_callback = callback;
 
 
 	// comment
@@ -109,7 +110,7 @@ __interrupt void USCIA0RX_ISR(void)
 	    case USCI_UART_UCRXIFG:
 	    	strcat(buf, &UCA0RXBUF);
 			if(UCA0RXBUF == '\n'){
-				PHY_send(buf);
+				g_callback(buf);
 				strcpy(buf,"");
 			}
 	        break;

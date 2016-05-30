@@ -19,9 +19,9 @@ typedef struct{
 Sensor_Data sensor_data = {0.0};
 
 // Prototypes
-void send_string(char *string);
+void process(char *string);
 
-void interpreter(char *string);
+
 
 
 
@@ -51,7 +51,7 @@ void main(void) {
     // Configure UART A0 for debugging (backchannel uart)
     //#########################################################################
 
-    PHY_init();
+    PHY_init(process);
 
     //#########################################################################
     // Configure UART A1 for measurement datat input
@@ -117,6 +117,10 @@ void main(void) {
     {
 
     }
+}
+
+void process (char* string) {
+	PHY_send(string);
 }
 
 //#############################################################################
@@ -197,31 +201,4 @@ __interrupt void USCI_A1_ISR(void)
     case USCI_UART_UCTXCPTIFG: break;
   }
 }
-
-
-
-
-//#############################################################################
-// UART A1 ISR for communication intup
-//#############################################################################
-//#pragma vector=USCI_A0_VECTOR
-//__interrupt void USCIA0RX_ISR(void)
-//{
-//	switch(__even_in_range(UCA0IV, USCI_UART_UCTXCPTIFG)) // check UART IFGs
-//	  {
-//	    case USCI_NONE: break;
-//	    case USCI_UART_UCRXIFG:
-//	    	strcat(data.string, &UCA0RXBUF);
-//			if(UCA0RXBUF == '\n'){
-//				send_string(data.string);
-//				strcpy(data.string,"");
-//			}
-//	        break;
-//	    case USCI_UART_UCTXIFG: break;
-//	    case USCI_UART_UCSTTIFG: break;
-//	    case USCI_UART_UCTXCPTIFG: break;
-//	  }
-//
-//}
-
 
