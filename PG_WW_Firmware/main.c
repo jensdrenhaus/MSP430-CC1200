@@ -1,7 +1,7 @@
 #include "phy.h"
 #include "msp430fr5969.h"
 #include <string.h>
-#include "ui.h"
+//#include "ui.h"
 
 // Globals
 
