@@ -37,7 +37,7 @@ static void foo();
 //!  PUBLIC PHY_init()
 //!
 ////////////////////////////////////////////////////////////////////////////
-void PHY_init(PHY_CB callback) {
+void phy_init(PHY_CB callback) {
 
 	// ------------------------------------
 	// save funtion ptr to callback func.
@@ -71,7 +71,7 @@ void PHY_init(PHY_CB callback) {
 //!  PUBLIC PHY_send()
 //!
 ////////////////////////////////////////////////////////////////////////////
-void PHY_send(char *string) {
+void phy_send(char *string) {
 	int n = 0;
 	while(1) {
 		while(!(UCA0IFG&UCTXIFG));

@@ -2,22 +2,11 @@
 #include "msp430fr5969.h"
 #include <string.h>
 #include "ui.h"
+#include "com.h"
 
 // Globals
 int pressed = 0;
 const int MY_BOX_ID = 42;
-
-// Defines
-
-typedef struct{
-	char string [20];
-} Data;
-Data data = {""};
-
-typedef struct{
-	double weight;
-}Sensor_Data;
-Sensor_Data sensor_data = {0.0};
 
 // Prototypes
 void process(char *string);
@@ -34,7 +23,7 @@ void main(void) {
 
     ui_init(enter);
 
-    PHY_init(process);
+    com_init(process);
 
     //#########################################################################
     // Configure UART A1 for measurement datat input
@@ -69,7 +58,7 @@ void main(void) {
 }
 
 void process (char* string) {
-	PHY_send(string);
+	phy_send(string);
 }
 
 void enter(){

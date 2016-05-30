@@ -1,43 +1,45 @@
 /*------------------------------------------------------------------------------
-| File: serial.h
+| File: com.h
 |
 | Say something about WHAT the model does.
 |
-| Note: uses UART A0 (backchannel UART) of MSP430 to commuinicate
-		implements UART AO ISR
+| Note: important things to know
 |-------------------------------------------------------------------------------
 | Datatypes:
-|     PHY_recbuf__t    -- used to store data and informatin of something
+|     NAME_datatype    -- used to store data and informatin of something
 |     ...
 |-------------------------------------------------------------------------------
 | Functions:
-|     PHY_init  -- init UART hardware, sets recieving behaviour
-|     PHY_send  -- sends multiple bytes
+|     name_somefunction  -- short explaination
 |     ...
  -----------------------------------------------------------------------------*/
 
-#ifndef _NAME_H_
-#define _NAME_H_
+#ifndef _COM_H_
+#define _COM_H_
 
-#define PHY_MAX_BUF		50
+
 
 
 //#############################################################################
 // datatypes
 
-/* structure to hold recieved chars */
-//typedef struct s_recbuf {
-//		char buf [PHY_MAX_BUF];
-//}SER_recbuf_t;
+typedef enum e_commands {PAGE = 1, WEIGHT = 2}command_t;
+
+/* structure to hold commands */
+typedef struct s_com_data {
+		command_t command;
+		int       id;
+		double	  arg;
+}com_data_t;
 
 
 
 //#############################################################################
 // callback function definition
-typedef void (*PHY_CB)(char* string);
+typedef void (*COM_CB)();
 
 //#############################################################################
-// function prototypes
+// functions (prototypes)
 
 /*------------------------------------------------------------------------------
 | name_somefunction  -- short explaination
@@ -49,10 +51,10 @@ typedef void (*PHY_CB)(char* string);
 |     ---
 |
  -----------------------------------------------------------------------------*/
-extern void phy_init(PHY_CB callback);
+extern void com_init(COM_CB callback);
 
-extern void phy_send(char *string);
+extern void com_send(com_data_t data);
 
 
 
-#endif // _NAME_H_
+#endif // _COM_H_
