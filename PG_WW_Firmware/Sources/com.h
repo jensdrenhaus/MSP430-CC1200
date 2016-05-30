@@ -29,7 +29,7 @@ typedef enum e_commands {PAGE = 1, WEIGHT = 2}command_t;
 typedef struct s_com_data {
 		command_t command;
 		int       id;
-		double	  arg;
+		int  	  arg;
 }com_data_t;
 
 
@@ -53,7 +53,7 @@ typedef void (*COM_CB)();
  -----------------------------------------------------------------------------*/
 extern void com_init(COM_CB callback);
 
-extern void com_send(com_data_t data);
+extern void com_send(com_data_t* data);
 
 
 

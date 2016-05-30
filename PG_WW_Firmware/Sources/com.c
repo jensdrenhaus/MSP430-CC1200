@@ -8,6 +8,7 @@
 
 #include "com.h"
 #include "phy.h"
+#include <stdio.h>
 
 
 
@@ -16,6 +17,7 @@
 // globals
 
 static COM_CB g_com_callback;
+static char send_str[PHY_MAX_BUF];
 
 ///* structure for something */
 //typedef struct s_name {
@@ -47,8 +49,18 @@ void com_init(COM_CB callback) {
 
 }
 
-void com_send(com_data_t data) {
-
+void com_send(com_data_t* data) {
+	switch (data->command){
+	case PAGE:
+		sprintf(send_str, "PAGE %d", data->id);
+		break;
+	case WEIGHT:
+		sprintf(send_str, "WEIGHT %d %d/n", data->id, data->arg);
+		break;
+	default:
+		strcpy(send_str, "ERROR");
+	}
+	phy_send(send_str);
 }
 
 

@@ -1,4 +1,4 @@
-#include <phy.h>
+#include "phy.h"
 #include "msp430fr5969.h"
 #include <string.h>
 #include "ui.h"
@@ -7,6 +7,7 @@
 // Globals
 int pressed = 0;
 const int MY_BOX_ID = 42;
+com_data_t send_data = {WEIGHT, 42, 100};
 
 // Prototypes
 void process(char *string);
@@ -58,7 +59,7 @@ void main(void) {
 }
 
 void process (char* string) {
-	phy_send(string);
+	com_send(&send_data);
 }
 
 void enter(){

@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------------
-| File: serial.h
+| File: phy.h
 |
 | Say something about WHAT the model does.
 |
@@ -16,8 +16,8 @@
 |     ...
  -----------------------------------------------------------------------------*/
 
-#ifndef _NAME_H_
-#define _NAME_H_
+#ifndef _PHY_H_
+#define _PHY_H_
 
 #define PHY_MAX_BUF		50
 
@@ -55,4 +55,4 @@ extern void phy_send(char *string);
 
 
 
-#endif // _NAME_H_
+#endif // _PHY_H_
