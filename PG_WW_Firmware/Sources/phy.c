@@ -47,22 +47,23 @@ void PHY_init(PHY_CB callback) {
 
 	// comment
 
-	P2SEL1 |= BIT5 | BIT6;          // Set port function to UART
-	P2SEL0 &= ~(BIT5 | BIT6);		// Set port function to UART
+	P2SEL1 |= BIT0 | BIT1;          // Set port function to UART
+	P2SEL0 &= ~(BIT0 | BIT1);       // Set port function to UART
 
 	UCA0CTLW0 = UCSWRST;            // Put eUSCI in reset
 	UCA0CTLW0 |= UCSSEL__SMCLK;     // CLK = SMCLK
-	// ------------------------------------
 	// Baud Rate calculation
 	// 1000000/(16*9600) = 6.510
 	// Fractional portion = 0.510
 	// User's Guide Table 21-4: UCBRSx = 0xAA
 	// UCBRFx = int ( (6.510-6)*16) = 8
-	// ------------------------------------
 	UCA0BR0 = 6;                    // 8000000/16/9600
-	UCA0BR1 = 0x00;				    // UCA0BR is a word register, set high byte
+	UCA0BR1 = 0x00;                 // UCA0BR is a word register, set high byte
 	UCA0MCTLW |= UCOS16 | UCBRF_8 | 0xAA00;
 	UCA0CTLW0 &= ~UCSWRST;          // Initialize eUSCI
+	UCA0IE |= UCRXIE;               // Enable RX Interrupt
+
+
 }
 
 ////////////////////////////////////////////////////////////////////////////

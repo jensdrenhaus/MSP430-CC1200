@@ -1,10 +1,6 @@
 #include <phy.h>
 #include "msp430fr5969.h"
 #include <string.h>
-<<<<<<< HEAD
-//#include "ui.h"
-=======
->>>>>>> parent of 168c385... changes faild- serial does not work anymore
 
 // Globals
 int pressed = 0;
@@ -83,23 +79,6 @@ void main(void) {
 
     PM5CTL0	&=	~LOCKLPM5;			// Disable the GPIO power-on default
     								//               high-impedance mode
-
-
-    P2SEL1 |= BIT0 | BIT1;          // Set port function to UART
-    P2SEL0 &= ~(BIT0 | BIT1);       // Set port function to UART
-
-    UCA0CTLW0 = UCSWRST;            // Put eUSCI in reset
-    UCA0CTLW0 |= UCSSEL__SMCLK;     // CLK = SMCLK
-    // Baud Rate calculation
-    // 1000000/(16*9600) = 6.510
-    // Fractional portion = 0.510
-    // User's Guide Table 21-4: UCBRSx = 0xAA
-    // UCBRFx = int ( (6.510-6)*16) = 8
-    UCA0BR0 = 6;                    // 8000000/16/9600
-    UCA0BR1 = 0x00;                 // UCA0BR is a word register, set high byte
-    UCA0MCTLW |= UCOS16 | UCBRF_8 | 0xAA00;
-    UCA0CTLW0 &= ~UCSWRST;          // Initialize eUSCI
-    UCA0IE |= UCRXIE;               // Enable RX Interrupt
 
     // Configure GPIO LEDs
     P1DIR |= BIT0;                  // Set P1.0 to output direction
@@ -205,4 +184,3 @@ __interrupt void USCI_A1_ISR(void)
     case USCI_UART_UCTXCPTIFG: break;
   }
 }
-
