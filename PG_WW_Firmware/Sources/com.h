@@ -23,7 +23,7 @@
 //#############################################################################
 // datatypes
 
-typedef enum e_commands {PAGE = 1, WEIGHT = 2}command_t;
+typedef enum e_commands {NONE = 0, PAGE = 1, WEIGHT = 2}command_t;
 
 /* structure to hold commands */
 typedef struct s_com_data {
@@ -34,9 +34,10 @@ typedef struct s_com_data {
 
 
 
+
 //#############################################################################
 // callback function definition
-typedef void (*COM_CB)();
+typedef void (*COM_CB)(com_data_t* data);
 
 //#############################################################################
 // functions (prototypes)

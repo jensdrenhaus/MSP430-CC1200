@@ -19,10 +19,7 @@
 static COM_CB g_com_callback;
 static char send_str[PHY_MAX_BUF];
 
-///* structure for something */
-//typedef struct s_name {
-//		int   one;
-//}Name_t;
+com_data_t recieve_data;
 
 
 
@@ -52,13 +49,13 @@ void com_init(COM_CB callback) {
 void com_send(com_data_t* data) {
 	switch (data->command){
 	case PAGE:
-		sprintf(send_str, "PAGE %d", data->id);
+		sprintf(send_str, "PAGE %d\n", data->id);
 		break;
 	case WEIGHT:
-		sprintf(send_str, "WEIGHT %d %d/n", data->id, data->arg);
+		sprintf(send_str, "WEIGHT %d %d\n", data->id, data->arg);
 		break;
 	default:
-		strcpy(send_str, "ERROR");
+		strcpy(send_str, "ERROR\n");
 	}
 	phy_send(send_str);
 }
@@ -70,6 +67,23 @@ void com_send(com_data_t* data) {
 //!
 ////////////////////////////////////////////////////////////////////////////
 static void interpreter(char* string){
-	g_com_callback(string);
+	char *ptr;
+	ptr = strtok(string, " ");
+	if(!strcmp(ptr, "PAGE"))
+		recieve_data.command = PAGE;
+	else if(!strcmp(ptr, "WEIGHT"))
+		recieve_data.command = WEIGHT;
+	else
+		recieve_data.command = NONE;
+
+	ptr = strtok(NULL, " ");
+	if(ptr)
+		recieve_data.id = atoi(ptr);
+	ptr = strtok(NULL, " ");
+	if(ptr)
+		recieve_data.arg = atoi(ptr);
+
+
+	g_com_callback(&recieve_data);
 }
 

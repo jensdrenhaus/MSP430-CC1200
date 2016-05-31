@@ -8,9 +8,11 @@
 int pressed = 0;
 const int MY_BOX_ID = 42;
 com_data_t send_data = {WEIGHT, 42, 100};
+const char* error_msg_command = "No valid command recieved\n";
+const char* error_msg_id      = "That's not me\n";
 
 // Prototypes
-void process(char *string);
+void process(com_data_t* recieve_data);
 
 void enter();
 
@@ -58,8 +60,14 @@ void main(void) {
     }
 }
 
-void process (char* string) {
-	com_send(&send_data);
+void process (com_data_t* recieve_data) {
+	if(recieve_data->command == PAGE)
+		if(recieve_data->id == MY_BOX_ID)
+			com_send(&send_data);
+		else
+			phy_send(error_msg_id);
+	else
+		phy_send(error_msg_command);
 }
 
 void enter(){
