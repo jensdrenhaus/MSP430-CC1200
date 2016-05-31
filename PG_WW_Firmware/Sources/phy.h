@@ -1,19 +1,18 @@
 /*------------------------------------------------------------------------------
 | File: phy.h
 |
-| Say something about WHAT the model does.
+| Implemts functionality for wired serial communication.
 |
-| Note: uses UART A0 (backchannel UART) of MSP430 to commuinicate
-		implements UART AO ISR
+| Note: - uses UART A0 (backchannel UART) of MSP430 to commuinicate
+|		- implements UART AO ISR
 |-------------------------------------------------------------------------------
 | Datatypes:
-|     PHY_recbuf__t    -- used to store data and informatin of something
-|     ...
+|     -
 |-------------------------------------------------------------------------------
 | Functions:
-|     PHY_init  -- init UART hardware, sets recieving behaviour
-|     PHY_send  -- sends multiple bytes
-|     ...
+|     PHY_init       -- init UART hardware, saves functionpointer for callback
+|     PHY_send       -- sends string via serial port
+|     USCIA0RX_ISR   -- ISR for incoming bytes
  -----------------------------------------------------------------------------*/
 
 #ifndef _PHY_H_
@@ -25,11 +24,6 @@
 //#############################################################################
 // datatypes
 
-/* structure to hold recieved chars */
-//typedef struct s_recbuf {
-//		char buf [PHY_MAX_BUF];
-//}SER_recbuf_t;
-
 
 
 //#############################################################################
@@ -40,17 +34,27 @@ typedef void (*PHY_CB)(char* string);
 // function prototypes
 
 /*------------------------------------------------------------------------------
-| name_somefunction  -- short explaination
+| PHY_init       -- init UART hardware, saves functionpointer for callback
 |
 | Parameter:
-|     ---
+|     function ptr to callback
 |
 | Return:
-|     ---
+|     -
 |
  -----------------------------------------------------------------------------*/
 extern void phy_init(PHY_CB callback);
 
+/*------------------------------------------------------------------------------
+| PHY_send       -- sends string via serial port
+|
+| Parameter:
+|     pointer to string to be transmitted
+|
+| Return:
+|     -
+|
+ -----------------------------------------------------------------------------*/
 extern void phy_send(char *string);
 
 

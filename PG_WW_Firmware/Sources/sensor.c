@@ -63,7 +63,7 @@ void sen_init(SEN_CB callback){
 //!
 ////////////////////////////////////////////////////////////////////////////
 void sen_request() {
-	UCA0TXBUF = 'w';
+	//UCA0TXBUF = 'w';
 }
 
 

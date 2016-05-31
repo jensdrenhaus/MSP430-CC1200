@@ -1,7 +1,7 @@
 /*------------------------------------------------------------------------------
 | File: com.h
 |
-| Say something about WHAT the model does.
+| Implements funktionality for converting
 |
 | Note: important things to know
 |-------------------------------------------------------------------------------

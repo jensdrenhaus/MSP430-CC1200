@@ -1,9 +1,10 @@
 /*------------------------------------------------------------------------------
 | File: phy.c
 |
-| Say something about the module. Copy that part from serial.h
+| Implemts functionality for wired serial communication.
 |
-| Note: important things
+| Note: - uses UART A0 (backchannel UART) of MSP430 to commuinicate
+|		- implements UART AO ISR
  -----------------------------------------------------------------------------*/
 
 #include <phy.h>
@@ -18,13 +19,6 @@
 static char      buf [PHY_MAX_BUF];
 static PHY_CB    g_callback;
 
-
-
-
-
-//#############################################################################
-// private function prototypes
-static void foo();
 
 
 //#############################################################################

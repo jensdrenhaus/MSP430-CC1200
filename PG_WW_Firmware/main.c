@@ -8,7 +8,7 @@
 // Globals
 int pressed = 0;
 const int MY_BOX_ID = 42;
-com_data_t send_data = {WEIGHT, 42, 100};
+com_data_t send_data = {WEIGHT, 1, 100};
 const char* error_msg_command = "No valid command recieved\n";
 const char* error_msg_id      = "That's not me\n";
 
@@ -23,21 +23,30 @@ void enter();
 
 void main(void) {
 
-    WDTCTL = WDTPW | WDTHOLD;           // Stop watchdog timer
+    WDTCTL = WDTPW | WDTHOLD;       // stop watchdog timer
 
     ui_init(enter);
-
     com_init(process);
+    sen_init(update_weight);
 
-
-    _EINT();                        // Global interrupt enable
-
+    _EINT();                        // global interrupt enable
 
     while(1)
     {
+    	// do nothing
+    	// wait for interrupts
 
+    	// test für softwaregruppe
+//    	com_send(&send_data);
+//    	send_data.id++;
+//    	if(send_data.id >10)
+//    		send_data.id = 1;
     }
 }
+
+//#############################################################################
+// callback funktions
+//#############################################################################
 
 void process (com_data_t* recieve_data) {
 	if(recieve_data->command == PAGE)
