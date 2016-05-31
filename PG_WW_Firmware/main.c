@@ -1,8 +1,9 @@
-#include "phy.h"
 #include "msp430fr5969.h"
+#include "phy.h"
 #include <string.h>
 #include "ui.h"
 #include "com.h"
+#include "sensor.h"
 
 // Globals
 int pressed = 0;
@@ -13,7 +14,7 @@ const char* error_msg_id      = "That's not me\n";
 
 // Prototypes
 void process(com_data_t* recieve_data);
-
+void update_weight(int val);
 void enter();
 
 
@@ -27,28 +28,6 @@ void main(void) {
     ui_init(enter);
 
     com_init(process);
-
-    //#########################################################################
-    // Configure UART A1 for measurement datat input
-    //#########################################################################
-
-    P2SEL1 |= BIT0 | BIT1;          // Set port function to UART
-    P2SEL0 &= ~(BIT0 | BIT1);		// Set port function to UART
-
-    UCA1CTLW0 = UCSWRST;            // Put eUSCI in reset
-    UCA1CTLW0 |= UCSSEL__SMCLK;     // CLK = SMCLK
-    // Baud Rate calculation
-    // 1000000/(16*9600) = 6.510
-    // Fractional portion = 0.510
-    // User's Guide Table 21-4: UCBRSx = 0xAA
-    // UCBRFx = int ( (6.510-6)*16) = 8
-    UCA1BR0 = 6;                    // 8000000/16/9600
-    UCA1BR1 = 0x00;				    // UCA0BR is a word register, set high-byte
-    UCA1MCTLW |= UCOS16 | UCBRF_8 | 0xAA00;
-    UCA1CTLW0 &= ~UCSWRST;          // Initialize eUSCI
-    UCA1IE |= UCRXIE;               // Enable USCI_A1 RX interrupt
-
-
 
 
     _EINT();                        // Global interrupt enable
@@ -70,6 +49,10 @@ void process (com_data_t* recieve_data) {
 		phy_send(error_msg_command);
 }
 
+void update_weight(int val) {
+	send_data.arg = val;
+}
+
 void enter(){
 	ui_toggle_status();
 }
@@ -82,34 +65,12 @@ void enter(){
 #pragma vector=TIMER1_A0_VECTOR
 __interrupt void Timer0_A1(void)
 {
-	static int num = 0x30;
 	static int tick = 1;        // set state for full secound
 
-	if (tick) {
-
-	}
-
+	if (tick)
+		//
+		sen_request();
 	tick ^= 1;                   // toggel tick state
 	ui_tick();
-
 }
 
-//#############################################################################
-// UART A1 ISR for measurement data intup
-//#############################################################################
-#pragma vector=USCI_A1_VECTOR
-__interrupt void USCI_A1_ISR(void)
-{
-  switch(__even_in_range(UCA1IV, USCI_UART_UCTXCPTIFG)) // check UART IFGs
-  {
-    case USCI_NONE: break;
-    case USCI_UART_UCRXIFG:
-      while(!(UCA1IFG&UCTXIFG));
-      UCA0TXBUF = UCA1RXBUF;
-      __no_operation();
-      break;
-    case USCI_UART_UCTXIFG: break;
-    case USCI_UART_UCSTTIFG: break;
-    case USCI_UART_UCTXCPTIFG: break;
-  }
-}
