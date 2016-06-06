@@ -9,6 +9,7 @@
 #include "com.h"
 #include "phy.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 
 
@@ -47,12 +48,15 @@ void com_init(COM_CB callback) {
 }
 
 void com_send(com_data_t* data) {
+	char tempstr[15] = "test d 123.45\n";
 	switch (data->command){
 	case PAGE:
 		sprintf(send_str, "PAGE %d\n", data->id);
 		break;
 	case WEIGHT:
-		sprintf(send_str, "WEIGHT %d %d\n", data->id, data->arg);
+		sprintf(send_str, "WEIGHT %d %.3f \n", data->id, data->arg);
+//		dtoa(tempstr, data->arg);
+//		strcat(send_str, tempstr);
 		break;
 	default:
 		strcpy(send_str, "ERROR\n");
@@ -81,9 +85,12 @@ static void interpreter(char* string){
 		recieve_data.id = atoi(ptr);
 	ptr = strtok(NULL, " ");
 	if(ptr)
-		recieve_data.arg = atoi(ptr);
+		recieve_data.arg = atof(ptr);
 
 
 	g_com_callback(&recieve_data);
 }
+
+
+
 

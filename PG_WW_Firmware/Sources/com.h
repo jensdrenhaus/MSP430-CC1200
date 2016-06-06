@@ -19,7 +19,6 @@
 
 
 
-
 //#############################################################################
 // datatypes
 
@@ -29,7 +28,7 @@ typedef enum e_commands {NONE = 0, PAGE = 1, WEIGHT = 2}command_t;
 typedef struct s_com_data {
 		command_t command;
 		int       id;
-		int  	  arg;
+		double	  arg;
 }com_data_t;
 
 

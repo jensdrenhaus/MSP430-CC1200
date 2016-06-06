@@ -8,7 +8,7 @@
 // Globals
 int pressed = 0;
 const int MY_BOX_ID = 42;
-com_data_t send_data = {WEIGHT, 1, 100};
+com_data_t send_data = {WEIGHT, 42, 100.12};
 const char* error_msg_command = "No valid command recieved\n";
 const char* error_msg_id      = "That's not me\n";
 
@@ -36,7 +36,7 @@ void main(void) {
     	// do nothing
     	// wait for interrupts
 
-    	// test für softwaregruppe
+    	// test fï¿½r softwaregruppe
 //    	com_send(&send_data);
 //    	send_data.id++;
 //    	if(send_data.id >10)
@@ -54,6 +54,11 @@ void process (com_data_t* recieve_data) {
 			com_send(&send_data);
 		else
 			phy_send(error_msg_id);
+	else if(recieve_data->command == WEIGHT) {
+		com_send(recieve_data);
+//		send_data.arg = recieve_data->arg;
+//		com_send(&send_data);
+	}
 	else
 		phy_send(error_msg_command);
 }
