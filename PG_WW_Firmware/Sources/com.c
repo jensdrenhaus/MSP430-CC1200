@@ -10,6 +10,7 @@
 #include "phy.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 
 
@@ -20,7 +21,7 @@
 static COM_CB g_com_callback;
 static char send_str[PHY_MAX_BUF];
 
-com_data_t recieve_data;
+com_data_t receive_data;
 
 
 
@@ -48,7 +49,6 @@ void com_init(COM_CB callback) {
 }
 
 void com_send(com_data_t* data) {
-	char tempstr[15] = "test d 123.45\n";
 	switch (data->command){
 	case PAGE:
 		sprintf(send_str, "PAGE %d\n", data->id);
@@ -74,21 +74,21 @@ static void interpreter(char* string){
 	char *ptr;
 	ptr = strtok(string, " ");
 	if(!strcmp(ptr, "PAGE"))
-		recieve_data.command = PAGE;
+		receive_data.command = PAGE;
 	else if(!strcmp(ptr, "WEIGHT"))
-		recieve_data.command = WEIGHT;
+		receive_data.command = WEIGHT;
 	else
-		recieve_data.command = NONE;
+		receive_data.command = NONE;
 
 	ptr = strtok(NULL, " ");
 	if(ptr)
-		recieve_data.id = atoi(ptr);
+		receive_data.id = atoi(ptr);
 	ptr = strtok(NULL, " ");
 	if(ptr)
-		recieve_data.arg = atof(ptr);
+		receive_data.arg = atof(ptr);
 
 
-	g_com_callback(&recieve_data);
+	g_com_callback(&receive_data);
 }
 
 

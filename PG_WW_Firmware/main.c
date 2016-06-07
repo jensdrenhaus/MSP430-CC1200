@@ -1,6 +1,5 @@
 #include "msp430fr5969.h"
 #include "phy.h"
-#include <string.h>
 #include "ui.h"
 #include "com.h"
 #include "sensor.h"
@@ -9,8 +8,8 @@
 int pressed = 0;
 const int MY_BOX_ID = 42;
 com_data_t send_data = {WEIGHT, 42, 100.12};
-const char* error_msg_command = "No valid command recieved\n";
-const char* error_msg_id      = "That's not me\n";
+char* error_msg_command = "No valid command recieved\n";
+char* error_msg_id      = "That's not me\n";
 
 // Prototypes
 void process(com_data_t* recieve_data);
@@ -48,14 +47,14 @@ void main(void) {
 // callback funktions
 //#############################################################################
 
-void process (com_data_t* recieve_data) {
-	if(recieve_data->command == PAGE)
-		if(recieve_data->id == MY_BOX_ID)
+void process (com_data_t* receive_data) {
+	if(receive_data->command == PAGE)
+		if(receive_data->id == MY_BOX_ID)
 			com_send(&send_data);
 		else
 			phy_send(error_msg_id);
-	else if(recieve_data->command == WEIGHT) {
-		com_send(recieve_data);
+	else if(receive_data->command == WEIGHT) {
+		com_send(receive_data);
 //		send_data.arg = recieve_data->arg;
 //		com_send(&send_data);
 	}

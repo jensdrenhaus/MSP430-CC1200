@@ -95,7 +95,7 @@ __interrupt void USCIA0RX_ISR(void)
 	  {
 	    case USCI_NONE: break;
 	    case USCI_UART_UCRXIFG:
-	    	strcat(buf, &UCA0RXBUF);
+	    	strcat(buf, (const char*)&UCA0RXBUF);
 			if(UCA0RXBUF == '\n'){
 				g_callback(buf);
 				strcpy(buf,"");
