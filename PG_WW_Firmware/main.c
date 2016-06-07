@@ -7,8 +7,9 @@
 
   Current state:
   	  communication via serial only!
-  	  -> responds to PAGE command with fix WEIGHT sample
+  	  -> responds to PAGE command with toggel Status LED
   	  -> echos WEIGHT commands
+  	  -> sends dummy WEIGHT every 10 sec
 |
 | Note: - uses Timer A1 of MSP430 to trigger periodic events
 |		- implements Timer A1 ISR
@@ -66,20 +67,18 @@ void main(void) {
 void process (com_data_t* receive_data) {
 	if(receive_data->command == PAGE)
 		if(receive_data->id == MY_BOX_ID)
-			com_send(&send_data);
+			ui_toggle_status();
 		else
 			serial_send(error_msg_id);
 	else if(receive_data->command == WEIGHT) {
 		com_send(receive_data);
-//		send_data.arg = recieve_data->arg;
-//		com_send(&send_data);
 	}
 	else
 		serial_send(error_msg_command);
 }
 
 void update_weight(int val) {
-	send_data.arg = val;
+	send_data.arg = (double)val;
 }
 
 void enter(){
@@ -94,11 +93,19 @@ void enter(){
 #pragma vector=TIMER1_A0_VECTOR
 __interrupt void Timer0_A1(void)
 {
-	static int tick = 1;        // set state for full secound
+	static int tick     = 1;        // set state for full secound
+	static int send_cnt = 0;
 
-	if (tick)
-		//
+	if (tick){
+		//check sensor
 		sen_request();
+		// count to 10 secounds
+		send_cnt++;
+		if(send_cnt == 10){
+			com_send(&send_data);
+			send_cnt = 0;
+		}
+	}
 	tick ^= 1;                   // toggel tick state
 	ui_tick();
 }

@@ -8,19 +8,22 @@
 
 #include "sensor.h"
 #include "msp430fr5969.h"
+#include <string.h>
+#include <stdlib.h>
 
 
 
 //#############################################################################
 // globals
 
-static SEN_CB g_sen_callback;
+static char      buf[25];
+static SEN_CB    g_sen_callback;
 
 
 
 //#############################################################################
 // private function prototypes
-//static void foo();
+static int converter();
 
 
 //#############################################################################
@@ -40,8 +43,8 @@ void sen_init(SEN_CB callback){
 	// Configure UART A1 for measurement datat input
 	//----------------------------------------------
 
-	P2SEL1 |= BIT0 | BIT1;          // Set port function to UART
-	P2SEL0 &= ~(BIT0 | BIT1);		// Set port function to UART
+	P2SEL1 |= BIT5 | BIT6;          // Set port function to UART
+	P2SEL0 &= ~(BIT5 | BIT6);		// Set port function to UART
 
 	UCA1CTLW0 = UCSWRST;            // Put eUSCI in reset
 	UCA1CTLW0 |= UCSSEL__SMCLK;     // CLK = SMCLK
@@ -59,14 +62,35 @@ void sen_init(SEN_CB callback){
 
 ////////////////////////////////////////////////////////////////////////////
 
-//!  PUBLIC module_somefunction()
+//!  PUBLIC sen_request()
 //!
 ////////////////////////////////////////////////////////////////////////////
 void sen_request() {
-	//UCA0TXBUF = 'w';
+	while(!(UCA1IFG&UCTXIFG));
+	UCA1TXBUF = 's';
 }
 
+////////////////////////////////////////////////////////////////////////////
 
+//!  PRIVATE converter()
+//!
+////////////////////////////////////////////////////////////////////////////
+int converter() {
+	char tmp_str[15] = "";
+	int i = 11;
+	int j = 0;
+	while(buf[i] != ' '){
+		i--;
+	}
+	i++;
+	while(i <= 11){
+		tmp_str[j] = buf[i];
+		i++;
+		j++;
+	}
+	tmp_str[j] = '\0';
+	return atoi(tmp_str);
+}
 
 //#############################################################################
 // interrupt service routines:
@@ -78,21 +102,25 @@ void sen_request() {
 //!
 ////////////////////////////////////////////////////////////////////////////
 #pragma vector=USCI_A1_VECTOR
-__interrupt void USCI_A1_ISR(void)
-{
+__interrupt void USCI_A1_ISR(void){
   switch(__even_in_range(UCA1IV, USCI_UART_UCTXCPTIFG)) // check UART IFGs
   {
     case USCI_NONE: break;
     case USCI_UART_UCRXIFG:
       while(!(UCA1IFG&UCTXIFG));
       // read out serial data UCA1RXBUF
-      // convert to int
-      // g_sen_callback(val)
+      strcat(buf, (const char*)&UCA1RXBUF);
+      if(UCA1RXBUF == '\n'){
+    	  g_sen_callback(converter());
+    	  strcpy(buf,"");
+      }
       break;
     case USCI_UART_UCTXIFG: break;
     case USCI_UART_UCSTTIFG: break;
     case USCI_UART_UCTXCPTIFG: break;
   }
 }
+
+
 
 
