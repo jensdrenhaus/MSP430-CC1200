@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------------
-| File: phy.c
+| File: serial.c
 |
 | Implemts functionality for wired serial communication.
 |
@@ -7,7 +7,7 @@
 |		- implements UART AO ISR
  -----------------------------------------------------------------------------*/
 
-#include <phy.h>
+#include <serial.h>
 #include "msp430fr5969.h"
 #include <string.h>
 
@@ -16,8 +16,8 @@
 //#############################################################################
 // globals
 
-static char      buf [PHY_MAX_BUF];
-static PHY_CB    g_callback;
+static char      buf [SERIAL_MAX_BUF];
+static SERIAL_CB    g_callback;
 
 
 
@@ -28,10 +28,10 @@ static PHY_CB    g_callback;
 
 ////////////////////////////////////////////////////////////////////////////
 
-//!  PUBLIC PHY_init()
+//!  PUBLIC serial_init()
 //!
 ////////////////////////////////////////////////////////////////////////////
-void phy_init(PHY_CB callback) {
+void serial_init(SERIAL_CB callback) {
 
 	// ------------------------------------
 	// save funtion ptr to callback func.
@@ -62,10 +62,10 @@ void phy_init(PHY_CB callback) {
 
 ////////////////////////////////////////////////////////////////////////////
 
-//!  PUBLIC PHY_send()
+//!  PUBLIC serial_send()
 //!
 ////////////////////////////////////////////////////////////////////////////
-void phy_send(char *string) {
+void serial_send(char *string) {
 	int n = 0;
 	while(1) {
 		while(!(UCA0IFG&UCTXIFG));

@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------------
-| File: phy.h
+| File: serial.h
 |
 | Implemts functionality for wired serial communication.
 |
@@ -10,15 +10,15 @@
 |     -
 |-------------------------------------------------------------------------------
 | Functions:
-|     PHY_init       -- init UART hardware, saves functionpointer for callback
-|     PHY_send       -- sends string via serial port
-|     USCIA0RX_ISR   -- ISR for incoming bytes
+|     serial_init       -- init UART hardware, saves functionpointer for callback
+|     serial_send       -- sends string via serial port
+|     USCIA0RX_ISR      -- ISR for incoming bytes
  -----------------------------------------------------------------------------*/
 
-#ifndef _PHY_H_
-#define _PHY_H_
+#ifndef _SERIAL_H_
+#define _SERIAL_H_
 
-#define PHY_MAX_BUF		50
+#define SERIAL_MAX_BUF		50
 
 
 //#############################################################################
@@ -28,13 +28,13 @@
 
 //#############################################################################
 // callback function definition
-typedef void (*PHY_CB)(char* string);
+typedef void (*SERIAL_CB)(char* string);
 
 //#############################################################################
 // function prototypes
 
 /*------------------------------------------------------------------------------
-| PHY_init       -- init UART hardware, saves functionpointer for callback
+| serial_init       -- init UART hardware, saves functionpointer for callback
 |
 | Parameter:
 |     function ptr to callback
@@ -43,10 +43,10 @@ typedef void (*PHY_CB)(char* string);
 |     -
 |
  -----------------------------------------------------------------------------*/
-extern void phy_init(PHY_CB callback);
+extern void serial_init(SERIAL_CB callback);
 
 /*------------------------------------------------------------------------------
-| PHY_send       -- sends string via serial port
+| serial_send       -- sends string via serial port
 |
 | Parameter:
 |     pointer to string to be transmitted
@@ -55,8 +55,8 @@ extern void phy_init(PHY_CB callback);
 |     -
 |
  -----------------------------------------------------------------------------*/
-extern void phy_send(char *string);
+extern void serial_send(char *string);
 
 
 
-#endif // _PHY_H_
+#endif // _SERIAL_H_

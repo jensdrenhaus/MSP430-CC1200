@@ -1,13 +1,14 @@
 /*------------------------------------------------------------------------------
 | File: com.c
 |
-| Say something about the module. Copy that part from name.h
+| Implements funktionality for converting incoming byte data into textoriented
+| command structure and vice versa
 |
-| Note: important things
+| Note: -
  -----------------------------------------------------------------------------*/
 
 #include "com.h"
-#include "phy.h"
+#include "serial.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,7 +20,7 @@
 // globals
 
 static COM_CB g_com_callback;
-static char send_str[PHY_MAX_BUF];
+static char send_str[SERIAL_MAX_BUF];
 
 com_data_t receive_data;
 
@@ -38,16 +39,22 @@ static void interpreter(char* string);
 
 ////////////////////////////////////////////////////////////////////////////
 
-//!  PUBLIC module_somefunction()
+//!  PUBLIC com_init()
 //!
 ////////////////////////////////////////////////////////////////////////////
 void com_init(COM_CB callback) {
 
 	g_com_callback = callback;
-	phy_init(interpreter);
+	serial_init(interpreter);
 
 }
 
+
+////////////////////////////////////////////////////////////////////////////
+
+//!  PUBLIC com_send()
+//!
+////////////////////////////////////////////////////////////////////////////
 void com_send(com_data_t* data) {
 	switch (data->command){
 	case PAGE:
@@ -61,7 +68,7 @@ void com_send(com_data_t* data) {
 	default:
 		strcpy(send_str, "ERROR\n");
 	}
-	phy_send(send_str);
+	serial_send(send_str);
 }
 
 

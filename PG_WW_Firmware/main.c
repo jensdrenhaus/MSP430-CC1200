@@ -1,5 +1,21 @@
+/*------------------------------------------------------------------------------
+| File: main.c
+|
+| Initializes all software modules.
+  Triggers periodic events by timer interrupt.
+  Implements callback functions for each module.
+
+  Current state:
+  	  communication via serial only!
+  	  -> responds to PAGE command with fix WEIGHT sample
+  	  -> echos WEIGHT commands
+|
+| Note: - uses Timer A1 of MSP430 to trigger periodic events
+|		- implements Timer A1 ISR
+ -----------------------------------------------------------------------------*/
+
 #include "msp430fr5969.h"
-#include "phy.h"
+#include "serial.h"
 #include "ui.h"
 #include "com.h"
 #include "sensor.h"
@@ -52,14 +68,14 @@ void process (com_data_t* receive_data) {
 		if(receive_data->id == MY_BOX_ID)
 			com_send(&send_data);
 		else
-			phy_send(error_msg_id);
+			serial_send(error_msg_id);
 	else if(receive_data->command == WEIGHT) {
 		com_send(receive_data);
 //		send_data.arg = recieve_data->arg;
 //		com_send(&send_data);
 	}
 	else
-		phy_send(error_msg_command);
+		serial_send(error_msg_command);
 }
 
 void update_weight(int val) {

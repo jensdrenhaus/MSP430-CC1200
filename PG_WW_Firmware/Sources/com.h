@@ -1,17 +1,18 @@
 /*------------------------------------------------------------------------------
 | File: com.h
 |
-| Implements funktionality for converting
+| Implements funktionality for converting incoming byte data into textoriented
+| command structure and vice versa
 |
-| Note: important things to know
+| Note: -
 |-------------------------------------------------------------------------------
 | Datatypes:
-|     NAME_datatype    -- used to store data and informatin of something
-|     ...
+|     com_command_t    -- used to store command key words
+|     com_data_t       -- used to store command set
 |-------------------------------------------------------------------------------
 | Functions:
-|     name_somefunction  -- short explaination
-|     ...
+|     com_init  -- init subjacent modules, saves functionpointer for callback
+|     com_send  -- passes command set to subjacent module
  -----------------------------------------------------------------------------*/
 
 #ifndef _COM_H_
@@ -22,13 +23,13 @@
 //#############################################################################
 // datatypes
 
-typedef enum e_commands {NONE = 0, PAGE = 1, WEIGHT = 2}command_t;
+typedef enum e_commands {NONE = 0, PAGE = 1, WEIGHT = 2}com_command_t;
 
 /* structure to hold commands */
 typedef struct s_com_data {
-		command_t command;
-		int       id;
-		double	  arg;
+		com_command_t command;
+		int           id;
+		double	      arg;
 }com_data_t;
 
 
@@ -42,17 +43,27 @@ typedef void (*COM_CB)(com_data_t* data);
 // functions (prototypes)
 
 /*------------------------------------------------------------------------------
-| name_somefunction  -- short explaination
+| com_init  -- init subjacent modules, saves functionpointer for callback
 |
 | Parameter:
-|     ---
+|     function ptr to callback
 |
 | Return:
-|     ---
+|     -
 |
  -----------------------------------------------------------------------------*/
 extern void com_init(COM_CB callback);
 
+/*------------------------------------------------------------------------------
+| com_send  -- passes command set to subjacent module
+|
+| Parameter:
+|     command data structure
+|
+| Return:
+|     -
+|
+ -----------------------------------------------------------------------------*/
 extern void com_send(com_data_t* data);
 
 
