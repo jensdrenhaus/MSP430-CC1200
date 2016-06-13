@@ -43,8 +43,8 @@ void sen_init(SEN_CB callback){
 	// Configure UART A1 for measurement datat input
 	//----------------------------------------------
 
-	P2SEL1 |= BIT5 | BIT6;          // Set port function to UART
 	P2SEL0 &= ~(BIT5 | BIT6);		// Set port function to UART
+	P2SEL1 |= BIT5 | BIT6;          // Set port function to UART
 
 	UCA1CTLW0 = UCSWRST;            // Put eUSCI in reset
 	UCA1CTLW0 |= UCSSEL__SMCLK;     // CLK = SMCLK

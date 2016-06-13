@@ -40,9 +40,8 @@ void serial_init(SERIAL_CB callback) {
 
 
 	// comment
-
-	P2SEL1 |= BIT0 | BIT1;          // Set port function to UART
 	P2SEL0 &= ~(BIT0 | BIT1);       // Set port function to UART
+	P2SEL1 |= BIT0 | BIT1;          // Set port function to UART
 
 	UCA0CTLW0 = UCSWRST;            // Put eUSCI in reset
 	UCA0CTLW0 |= UCSSEL__SMCLK;     // CLK = SMCLK
