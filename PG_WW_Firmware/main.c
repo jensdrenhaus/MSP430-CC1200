@@ -20,6 +20,7 @@
 #include "ui.h"
 #include "com.h"
 #include "sensor.h"
+#include "spi.h"
 
 // Globals
 int pressed = 0;
@@ -44,6 +45,7 @@ void main(void) {
     ui_init(enter);
     com_init(process);
     sen_init(update_weight);
+    spi_init(8);                    // SMCLK(1MHz) / 8 = 125kH
 
     _EINT();                        // global interrupt enable
 
@@ -99,9 +101,13 @@ __interrupt void Timer0_A1(void)
 	if (tick){
 		//check sensor
 		sen_request();
-		// count to 10 secounds
+
+//		//Ping SPI -> will trap into inf. loop !!!
+//		uint8 test;
+//		spi_reg_access(0x00, 0b00101010, &test, 1);
+		// count to 4 secounds
 		send_cnt++;
-		if(send_cnt == 10){
+		if(send_cnt == 4){
 			com_send(&send_data);
 			send_cnt = 0;
 		}

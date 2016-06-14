@@ -62,7 +62,7 @@ void spi_init(uint8 prescaler) {
 	P1DIR |= BIT6 | BIT3;
 	P2DIR |= BIT2;
 	// MISO as INPUT
-	P1DIR &= BIT7;
+	P1DIR &= ~BIT7;
 	//Pull-UP on MISO
 	P1OUT |= BIT7;
 
@@ -101,7 +101,20 @@ uint8 spi_reg_access(uint8 access, uint8 addr, uint8 *data, uint16 len) {
 	//wait for answer / status byte
 	while(!(UCB0IFG & UCRXIFG));
 	status = UCB0RXBUF;
-	data_transfer(access|addr, data, len);
+	data_transfer(access, data, len);
+	return status;
+}
+
+////////////////////////////////////////////////////////////////////////////
+
+//!  PUBLIC spi_cmd_strobe()
+//!
+////////////////////////////////////////////////////////////////////////////
+uint8 spi_cmd_strobe(uint8 cmd){
+	uint8 status;
+	UCB0TXBUF= (cmd);
+	while(!(UCB0IFG & UCRXIFG));
+	status = UCB0RXBUF;
 	return status;
 }
 
@@ -111,6 +124,36 @@ uint8 spi_reg_access(uint8 access, uint8 addr, uint8 *data, uint16 len) {
 //!
 ////////////////////////////////////////////////////////////////////////////
 void data_transfer(uint8 header, uint8 *data, uint16 len){
+	uint16 i;
+
+	if(header&SPI_READ_BURST){
+		for(i = 0; i < len; i++){
+			UCB0IFG &= ~UCRXIFG; 		 // clear RX flag
+			UCB0TXBUF= 0x00;			 // send expected 0 Byte
+			while(!(UCB0IFG & UCRXIFG)); // wait for slave to answer
+			*data = UCB0RXBUF;			 // read RX buffer, RX flag is reset
+			data++;						 //
+		}
+	}
+	else if(header&SPI_READ_SINGLE){
+		UCB0IFG &= ~UCRXIFG; 		 // clear RX flag
+		UCB0TXBUF= 0x00;			 // send expected 0 Byte
+		while(!(UCB0IFG & UCRXIFG)); // wait for slave to answer
+		*data = UCB0RXBUF;			 // read RX buffer, RX flag is reset
+	}
+	else if(header&SPI_WRITE_BURST){
+		for(i = 0; i < len; i++){
+			UCB0IFG &= ~UCRXIFG;         // clear RX flag
+			UCB0TXBUF= *data; 		     // write byte
+			while(!(UCB0IFG & UCRXIFG)); // wait for slave to answer
+			data++;
+		}
+	}
+	else {
+		UCB0IFG &= ~UCRXIFG;         // clear RX flag
+		UCB0TXBUF= *data; 		     // write byte
+		while(!(UCB0IFG & UCRXIFG)); // wait for slave to answer
+	}
 
 }
 

@@ -43,6 +43,7 @@ typedef uint8 spi_status;
  -----------------------------------------------------------------------------*/
 extern void spi_init(uint8 prescaler);
 extern uint8 spi_reg_access(uint8 access_type, uint8 addr, uint8 *data, uint16 len);
+extern uint8 spi_cmd_strobe(uint8 cmd);
 
 
 #endif // _SERIAL_H_
