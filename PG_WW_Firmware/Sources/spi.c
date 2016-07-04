@@ -107,6 +107,28 @@ uint8 spi_reg_access(uint8 access, uint8 addr, uint8 *data, uint16 len) {
 
 ////////////////////////////////////////////////////////////////////////////
 
+//!  PUBLIC spi_ext_reg_access()
+//!
+////////////////////////////////////////////////////////////////////////////
+uint8 spi_ext_reg_access(uint8 access_type, uint8 ext_addr, uint8 addr,
+		uint8* data, uint16 len){
+	uint8 status;
+	// send header byte with extended address byte
+	UCB0IFG &= ~UCRXIFG;
+	UCB0TXBUF= (access_type | ext_addr);
+	//wait for answer / status byte
+	while(!(UCB0IFG & UCRXIFG));
+	status = UCB0RXBUF;
+	// send register address
+	UCB0TXBUF= (addr);
+	//wait for answer / status byte
+	while(!(UCB0IFG & UCRXIFG));
+	data_transfer(access_type, data, len);
+	return status;
+}
+
+////////////////////////////////////////////////////////////////////////////
+
 //!  PUBLIC spi_cmd_strobe()
 //!
 ////////////////////////////////////////////////////////////////////////////
