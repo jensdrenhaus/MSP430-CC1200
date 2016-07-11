@@ -307,8 +307,8 @@ typedef void (*RF_CB)(char* string);
 |     -
 |
  -----------------------------------------------------------------------------*/
-extern void rf_init(RF_CB callback);
-extern void phy_send(char *string);
+extern void rf_init();
+extern void rf_send();
 
 
 

@@ -21,6 +21,7 @@
 #include "com.h"
 #include "sensor.h"
 #include "spi.h"
+#include "rf.h"
 
 // Globals
 int pressed = 0;
@@ -45,7 +46,7 @@ void main(void) {
     ui_init(enter);
     com_init(process);
     sen_init(update_weight);
-    spi_init(8);                    // SMCLK(1MHz) / 8 = 125kH
+    rf_init();
 
     _EINT();                        // global interrupt enable
 
@@ -85,6 +86,7 @@ void update_weight(int val) {
 
 void enter(){
 	ui_toggle_status();
+	rf_send();
 }
 
 
