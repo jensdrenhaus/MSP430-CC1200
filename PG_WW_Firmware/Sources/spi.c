@@ -45,7 +45,7 @@ void spi_init(uint8 prescaler) {
 	 * SCLK -> P2.2   SCLK is secoundary module function on port 1
 	 * STE  -> P1.3   STE  is secoundary module function on port 1
 	 *
-	 *  PxSEL0  | PxSEL1 | mod-func
+	 *  PxSEL1  | PxSEL0 | mod-func
 	 *     0        0       GPIO
 	 *     0        1       prim
 	 *     1        0       sec
@@ -53,17 +53,18 @@ void spi_init(uint8 prescaler) {
 	 */
 
 	// Set module function for STE, MISO, MOSI
-	P1SEL0 |= BIT3 | BIT6 | BIT7;
-	P1SEL1 &= ~(BIT3 | BIT6 | BIT7);
+	P1SEL1 |= (BIT3 | BIT6 | BIT7);
+	P1SEL0 &= ~(BIT3 | BIT6 | BIT7);
 	// Set module function for SCLK
-	P2SEL0 |= BIT2;
-	P2SEL1 &= ~(BIT2);
+	P2SEL1 |= BIT2;
+	P2SEL0 &= ~(BIT2);
 	// MOSI, STE, SCLK as OUTPUT
 	P1DIR |= BIT6 | BIT3;
 	P2DIR |= BIT2;
 	// MISO as INPUT
 	P1DIR &= ~BIT7;
 	//Pull-UP on MISO
+	P1REN |= BIT7;
 	P1OUT |= BIT7;
 
 

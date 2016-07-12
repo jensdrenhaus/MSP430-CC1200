@@ -46,12 +46,19 @@ void main(void) {
     ui_init(enter);
     com_init(process);
     sen_init(update_weight);
+//    spi_init(8);
     rf_init();
 
     _EINT();                        // global interrupt enable
 
-    while(1)
+     while(1)
     {
+//    	// spi test
+//    	uint8 addr = 0x01; // IOCFG2
+//    	uint8 data = 0x06; // some value
+//    	spi_reg_access(SPI_WRITE_SINGLE, addr, &data, 1);
+
+
     	// do nothing
     	// wait for interrupts
 
