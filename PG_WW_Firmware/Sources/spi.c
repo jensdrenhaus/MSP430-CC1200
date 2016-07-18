@@ -102,7 +102,7 @@ uint8 spi_reg_access(uint8 access, uint8 addr, uint8 *data, uint16 len) {
 	//wait for answer / status byte
 	while(!(UCB0IFG & UCRXIFG));
 	status = UCB0RXBUF;
-	data_transfer(access, data, len);
+	data_transfer((access | addr), data, len);
 	return status;
 }
 
@@ -111,12 +111,12 @@ uint8 spi_reg_access(uint8 access, uint8 addr, uint8 *data, uint16 len) {
 //!  PUBLIC spi_ext_reg_access()
 //!
 ////////////////////////////////////////////////////////////////////////////
-uint8 spi_ext_reg_access(uint8 access_type, uint8 ext_addr, uint8 addr,
+uint8 spi_ext_reg_access(uint8 access, uint8 ext_addr, uint8 addr,
 		uint8* data, uint16 len){
 	uint8 status;
 	// send header byte with extended address byte
 	UCB0IFG &= ~UCRXIFG;
-	UCB0TXBUF= (access_type | ext_addr);
+	UCB0TXBUF= (access | ext_addr);
 	//wait for answer / status byte
 	while(!(UCB0IFG & UCRXIFG));
 	status = UCB0RXBUF;
@@ -124,7 +124,7 @@ uint8 spi_ext_reg_access(uint8 access_type, uint8 ext_addr, uint8 addr,
 	UCB0TXBUF= (addr);
 	//wait for answer / status byte
 	while(!(UCB0IFG & UCRXIFG));
-	data_transfer(access_type, data, len);
+	data_transfer((access | ext_addr), data, len);
 	return status;
 }
 
@@ -149,7 +149,7 @@ uint8 spi_cmd_strobe(uint8 cmd){
 void data_transfer(uint8 header, uint8 *data, uint16 len){
 	uint16 i;
 
-	if(header&SPI_READ_BURST){
+	if((header&0b11000000) == SPI_READ_BURST){
 		for(i = 0; i < len; i++){
 			UCB0IFG &= ~UCRXIFG; 		 // clear RX flag
 			UCB0TXBUF= 0x00;			 // send expected 0 Byte
@@ -158,13 +158,13 @@ void data_transfer(uint8 header, uint8 *data, uint16 len){
 			data++;						 //
 		}
 	}
-	else if(header&SPI_READ_SINGLE){
+	else if((header&0b11000000) == SPI_READ_SINGLE){
 		UCB0IFG &= ~UCRXIFG; 		 // clear RX flag
 		UCB0TXBUF= 0x00;			 // send expected 0 Byte
 		while(!(UCB0IFG & UCRXIFG)); // wait for slave to answer
 		*data = UCB0RXBUF;			 // read RX buffer, RX flag is reset
 	}
-	else if(header&SPI_WRITE_BURST){
+	else if((header&0b11000000) == SPI_WRITE_BURST){
 		for(i = 0; i < len; i++){
 			UCB0IFG &= ~UCRXIFG;         // clear RX flag
 			UCB0TXBUF= *data; 		     // write byte

@@ -127,6 +127,9 @@ void rf_send() {
 
 		// Strobe TX to send packet
 		spi_cmd_strobe(RF_STX);
+		spi_cmd_strobe(RF_SNOP);
+		spi_cmd_strobe(RF_SNOP);
+		spi_cmd_strobe(RF_SNOP);
 
 		// Wait for interrupt that packet has been sent.
 		// (Assumes the GPIO connected to the radioRxTxISR function is
