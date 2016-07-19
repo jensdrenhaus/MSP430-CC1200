@@ -59,16 +59,29 @@ void rf_init() {
 	// register configuration
 	// ------------------------------------
 	uint8 writeByte;
+	uint8 readByte = 0;
+	uint16 i;
 
 	// Reset radio
 	spi_cmd_strobe(RF_SRES);
 
+	// Read registers
+	for(i = 0;
+		i < (sizeof(preferredSettings)/sizeof(rfSetting_t)); i++) {
+		status = read_reg(preferredSettings[i].addr, &readByte, 1);
+	}
+
 	// Write registers to radio
-	uint16 i;
 	for(i = 0;
 	    i < (sizeof(preferredSettings)/sizeof(rfSetting_t)); i++) {
 	    writeByte = preferredSettings[i].data;
 	    status = write_reg(preferredSettings[i].addr, &writeByte, 1);
+	}
+
+	// Read registers
+	for(i = 0;
+		i < (sizeof(preferredSettings)/sizeof(rfSetting_t)); i++) {
+	    status = read_reg(preferredSettings[i].addr, &readByte, 1);
 	}
 
 
@@ -127,6 +140,15 @@ void rf_send() {
 
 		// Strobe TX to send packet
 		spi_cmd_strobe(RF_STX);
+		spi_cmd_strobe(RF_SNOP);
+		spi_cmd_strobe(RF_SNOP);
+		spi_cmd_strobe(RF_SNOP);
+		spi_cmd_strobe(RF_SNOP);
+		spi_cmd_strobe(RF_SNOP);
+		spi_cmd_strobe(RF_SNOP);
+		spi_cmd_strobe(RF_SNOP);
+		spi_cmd_strobe(RF_SNOP);
+		spi_cmd_strobe(RF_SNOP);
 		spi_cmd_strobe(RF_SNOP);
 		spi_cmd_strobe(RF_SNOP);
 		spi_cmd_strobe(RF_SNOP);
