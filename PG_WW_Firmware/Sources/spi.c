@@ -40,10 +40,10 @@ void spi_init(uint8 prescaler) {
 
 	UCB0CTLW0 |= UCSWRST; // SPI module in reset state
 
-	/* MOSI -> P1.6   MOSI is secoundary module function on port 1
-	 * MISO -> P1.7   MISO is secoundary module function on port 1
-	 * SCLK -> P2.2   SCLK is secoundary module function on port 1
-	 * STE  -> P1.3   STE  is secoundary module function on port 1
+	/* MOSI     -> P1.6   MOSI is secoundary module function on port 1
+	 * MISO     -> P1.7   MISO is secoundary module function on port 1
+	 * SCLK     -> P2.2   SCLK is secoundary module function on port 1
+	 * STE(CS)  -> P1.3   not used, set CS line manually before communication
 	 *
 	 *  PxSEL1  | PxSEL0 | mod-func
 	 *     0        0       GPIO
@@ -53,8 +53,8 @@ void spi_init(uint8 prescaler) {
 	 */
 
 	// Set module function for STE, MISO, MOSI
-	P1SEL1 |= (BIT3 | BIT6 | BIT7);
-	P1SEL0 &= ~(BIT3 | BIT6 | BIT7);
+	P1SEL1 |= ( BIT6 | BIT7);
+	P1SEL0 &= ~( BIT6 | BIT7);
 	// Set module function for SCLK
 	P2SEL1 |= BIT2;
 	P2SEL0 &= ~(BIT2);
@@ -67,20 +67,22 @@ void spi_init(uint8 prescaler) {
 	P1REN |= BIT7;
 	P1OUT |= BIT7;
 
+	//STE(CS) set to 1 (CS is aktive low)
+	P1OUT |= BIT3;
+
 
 	/* Configure
 	 * SPI                                    -> UCSYNC    set
-	 * 4 pin mode Slave enabled when STE = 0  -> UCMODE_2  set
+	 * 3 pin mode CS has to be set manually   -> UCMODE_0  set
 	 * Master mode                            -> UCMST     set
 	 * 8 Bit mode                             -> UC7BIT    clear
 	 * Most sicnificant bit first             -> UCMSB     set
 	 * Clock polarity: inactive stae is low   -> UCCPL     clear
 	 * Clock phase: capture on first edge     -> UCCKPH    set
-	 * use STE pin for enable signal          -> UCSTEM    set
 	 * Clock source SMCLK                     -> UCSSEL_2  set
 	 */
 	UCB0CTLW0 &= ~(UC7BIT | UCCKPL);
-	UCB0CTLW0 |= UCSYNC | UCMODE_2 | UCMST | UCMSB | UCCKPH | UCSTEM | UCSSEL_2;
+	UCB0CTLW0 |= UCSYNC | UCMODE_0 | UCMST | UCMSB | UCCKPH | UCSSEL_2;
 
 	UCB0BR0 = prescaler;
 
@@ -96,6 +98,10 @@ void spi_init(uint8 prescaler) {
 ////////////////////////////////////////////////////////////////////////////
 uint8 spi_reg_access(uint8 access, uint8 addr, uint8 *data, uint16 len) {
 	uint8 status;
+	// set CS low
+	P1OUT &= ~BIT3;
+	// wait for MISO to go low
+	while(P1IN & BIT7);
 	// send header byte
 	UCB0IFG &= ~UCRXIFG;
 	UCB0TXBUF= (access | addr);
@@ -103,6 +109,8 @@ uint8 spi_reg_access(uint8 access, uint8 addr, uint8 *data, uint16 len) {
 	while(!(UCB0IFG & UCRXIFG));
 	status = UCB0RXBUF;
 	data_transfer((access | addr), data, len);
+	// set CS high
+	P1OUT |= BIT3;
 	return status;
 }
 
@@ -114,6 +122,10 @@ uint8 spi_reg_access(uint8 access, uint8 addr, uint8 *data, uint16 len) {
 uint8 spi_ext_reg_access(uint8 access, uint8 ext_addr, uint8 addr,
 		uint8* data, uint16 len){
 	uint8 status;
+	// set CS low
+	P1OUT &= ~BIT3;
+	// wait for MISO to go low
+	while(P1IN & BIT7);
 	// send header byte with extended address byte
 	UCB0IFG &= ~UCRXIFG;
 	UCB0TXBUF= (access | ext_addr);
@@ -125,6 +137,8 @@ uint8 spi_ext_reg_access(uint8 access, uint8 ext_addr, uint8 addr,
 	//wait for answer / status byte
 	while(!(UCB0IFG & UCRXIFG));
 	data_transfer((access | ext_addr), data, len);
+	// set CS high
+	P1OUT |= BIT3;
 	return status;
 }
 
@@ -135,9 +149,15 @@ uint8 spi_ext_reg_access(uint8 access, uint8 ext_addr, uint8 addr,
 ////////////////////////////////////////////////////////////////////////////
 uint8 spi_cmd_strobe(uint8 cmd){
 	uint8 status;
+	// set CS low
+	P1OUT &= ~BIT3;
+	// wait for MISO to go low
+	while(P1IN & BIT7);
 	UCB0TXBUF= (cmd);
 	while(!(UCB0IFG & UCRXIFG));
 	status = UCB0RXBUF;
+	// set CS high
+	P1OUT |= BIT3;
 	return status;
 }
 

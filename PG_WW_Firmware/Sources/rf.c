@@ -65,11 +65,11 @@ void rf_init() {
 	// Reset radio
 	spi_cmd_strobe(RF_SRES);
 
-	// Read registers
-	for(i = 0;
-		i < (sizeof(preferredSettings)/sizeof(rfSetting_t)); i++) {
-		status = read_reg(preferredSettings[i].addr, &readByte, 1);
-	}
+//	// Read registers
+//	for(i = 0;
+//		i < (sizeof(preferredSettings)/sizeof(rfSetting_t)); i++) {
+//		status = read_reg(preferredSettings[i].addr, &readByte, 1);
+//	}
 
 	// Write registers to radio
 	for(i = 0;
@@ -78,11 +78,11 @@ void rf_init() {
 	    status = write_reg(preferredSettings[i].addr, &writeByte, 1);
 	}
 
-	// Read registers
-	for(i = 0;
-		i < (sizeof(preferredSettings)/sizeof(rfSetting_t)); i++) {
-	    status = read_reg(preferredSettings[i].addr, &readByte, 1);
-	}
+//	// Read registers
+//	for(i = 0;
+//		i < (sizeof(preferredSettings)/sizeof(rfSetting_t)); i++) {
+//	    status = read_reg(preferredSettings[i].addr, &readByte, 1);
+//	}
 
 
 
@@ -140,18 +140,18 @@ void rf_send() {
 
 		// Strobe TX to send packet
 		spi_cmd_strobe(RF_STX);
-		spi_cmd_strobe(RF_SNOP);
-		spi_cmd_strobe(RF_SNOP);
-		spi_cmd_strobe(RF_SNOP);
-		spi_cmd_strobe(RF_SNOP);
-		spi_cmd_strobe(RF_SNOP);
-		spi_cmd_strobe(RF_SNOP);
-		spi_cmd_strobe(RF_SNOP);
-		spi_cmd_strobe(RF_SNOP);
-		spi_cmd_strobe(RF_SNOP);
-		spi_cmd_strobe(RF_SNOP);
-		spi_cmd_strobe(RF_SNOP);
-		spi_cmd_strobe(RF_SNOP);
+//		spi_cmd_strobe(RF_SNOP);
+//		spi_cmd_strobe(RF_SNOP);
+//		spi_cmd_strobe(RF_SNOP);
+//		spi_cmd_strobe(RF_SNOP);
+//		spi_cmd_strobe(RF_SNOP);
+//		spi_cmd_strobe(RF_SNOP);
+//		spi_cmd_strobe(RF_SNOP);
+//		spi_cmd_strobe(RF_SNOP);
+//		spi_cmd_strobe(RF_SNOP);
+//		spi_cmd_strobe(RF_SNOP);
+//		spi_cmd_strobe(RF_SNOP);
+//		spi_cmd_strobe(RF_SNOP);
 
 		// Wait for interrupt that packet has been sent.
 		// (Assumes the GPIO connected to the radioRxTxISR function is
