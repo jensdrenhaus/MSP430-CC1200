@@ -78,11 +78,12 @@ void rf_init() {
 	    status = write_reg(preferredSettings[i].addr, &writeByte, 1);
 	}
 
-//	// Read registers
-//	for(i = 0;
-//		i < (sizeof(preferredSettings)/sizeof(rfSetting_t)); i++) {
-//	    status = read_reg(preferredSettings[i].addr, &readByte, 1);
-//	}
+	// Read registers
+	for(i = 0;
+		i < (sizeof(preferredSettings)/sizeof(rfSetting_t)); i++) {
+		status = read_reg(preferredSettings[i].addr, &readByte, 1);
+	}
+
 
 
 
@@ -116,17 +117,13 @@ void rf_send() {
 	// Configure GPIO Interrupt
 	P3DIR &= ~BIT5;                 // Set P3.5 to input direction
 	P3REN |= BIT5;                  // Set P3.5 pullup/down Resistor
-	P3OUT |= BIT5;                  // Select P3.5 pull-up
-	P3IES |= BIT5;                  // falling edge
-	P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
+	P3OUT &= ~BIT5;                 // Select P3.5 pull-down
 	P3IE  |= BIT5;                  // Enable Interrupt on P3.5
+	P3IES &= ~BIT5;                  // rising edge
+	P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
 
 
 
-//	// Infinite loop
-//	while(1) {
-
-		// send one packet
 
 		// Update packet counter
 		packetCounter++;
@@ -140,18 +137,6 @@ void rf_send() {
 
 		// Strobe TX to send packet
 		spi_cmd_strobe(RF_STX);
-//		spi_cmd_strobe(RF_SNOP);
-//		spi_cmd_strobe(RF_SNOP);
-//		spi_cmd_strobe(RF_SNOP);
-//		spi_cmd_strobe(RF_SNOP);
-//		spi_cmd_strobe(RF_SNOP);
-//		spi_cmd_strobe(RF_SNOP);
-//		spi_cmd_strobe(RF_SNOP);
-//		spi_cmd_strobe(RF_SNOP);
-//		spi_cmd_strobe(RF_SNOP);
-//		spi_cmd_strobe(RF_SNOP);
-//		spi_cmd_strobe(RF_SNOP);
-//		spi_cmd_strobe(RF_SNOP);
 
 		// Wait for interrupt that packet has been sent.
 		// (Assumes the GPIO connected to the radioRxTxISR function is
@@ -160,7 +145,6 @@ void rf_send() {
 
 		// Clear semaphore flag
 		packetSemaphore = ISR_IDLE;
-//	}
 }
 
 

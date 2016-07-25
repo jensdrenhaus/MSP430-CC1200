@@ -153,6 +153,7 @@ uint8 spi_cmd_strobe(uint8 cmd){
 	P1OUT &= ~BIT3;
 	// wait for MISO to go low
 	while(P1IN & BIT7);
+	UCB0IFG &= ~UCRXIFG;
 	UCB0TXBUF= (cmd);
 	while(!(UCB0IFG & UCRXIFG));
 	status = UCB0RXBUF;
