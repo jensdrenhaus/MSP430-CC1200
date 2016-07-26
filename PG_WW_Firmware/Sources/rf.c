@@ -100,51 +100,49 @@ void rf_send() {
 	// Initialize packet buffer of size PKTLEN + 1
 	uint8 txBuffer[PKTLEN+1] = {0};
 
-	rfStatus_t status;
+	uint8 status = 0;
 
-//	// Connect ISR function to GPIO2
-//	ioPinIntRegister(IO_PIN_PORT_1, GPIO2, &radioTxISR);
-//
-//	// Interrupt on falling edge
-//	ioPinIntTypeSet(IO_PIN_PORT_1, GPIO2, IO_PIN_FALLING_EDGE);
-//
-//	// Clear ISR flag
-//	ioPinIntClear(IO_PIN_PORT_1, GPIO2);
-//
-//	// Enable interrupt
-//	ioPinIntEnable(IO_PIN_PORT_1, GPIO2);
 
 	// Configure GPIO Interrupt
+	// no ISR no INT enable just set the right edge select
+	// for chekcing the ISR flag on P3.5 later for end of transmission
+	// line connected to P3.5 looks like this:
+	//
+	//          start sending          sending complete
+	//               ___________________________
+	// _____________|                           |_________________
+	//
 	P3DIR &= ~BIT5;                 // Set P3.5 to input direction
 	P3REN |= BIT5;                  // Set P3.5 pullup/down Resistor
 	P3OUT &= ~BIT5;                 // Select P3.5 pull-down
-	P3IE  |= BIT5;                  // Enable Interrupt on P3.5
-	P3IES &= ~BIT5;                  // rising edge
+//	P3IE  |= BIT5;                  // Enable Interrupt on P3.5
+	P3IES |= BIT5;                  // falling edge
 	P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
 
 
+	// Update packet counter
+	packetCounter++;
+
+	// Create a random packet with PKTLEN + 2 byte packet
+	// counter + n x random bytes
+	create_packet(txBuffer);
+
+	// Write packet to TX FIFO
+	status = write_tx_fifo(txBuffer, sizeof(txBuffer));
 
 
-		// Update packet counter
-		packetCounter++;
+	// Strobe TX to send packet
+	spi_cmd_strobe(RF_STX);
 
-		// Create a random packet with PKTLEN + 2 byte packet
-		// counter + n x random bytes
-		create_packet(txBuffer);
+	// Wait for interruptflag that packet has been sent.
+	// (Assumes the CC1200-GPIO connected to P3.5 is
+	// set to GPIOx_CFG = 0x06)
+	while(!(P3IFG & BIT5));
+	status = spi_cmd_strobe(RF_SNOP);
 
-		// Write packet to TX FIFO
-		status = write_tx_fifo(txBuffer, sizeof(txBuffer));
+	// Clear semaphore flag
+	packetSemaphore = ISR_IDLE;
 
-		// Strobe TX to send packet
-		spi_cmd_strobe(RF_STX);
-
-		// Wait for interrupt that packet has been sent.
-		// (Assumes the GPIO connected to the radioRxTxISR function is
-		// set to GPIOx_CFG = 0x06)
-		while(packetSemaphore != ISR_ACTION_REQUIRED);
-
-		// Clear semaphore flag
-		packetSemaphore = ISR_IDLE;
 }
 
 
@@ -233,16 +231,16 @@ static void create_packet(uint8 txBuffer[]) {
 // ??? ISR for RXTX
 
 //////////////////////////////////////////////////////////////////////////
-#pragma vector=PORT3_VECTOR
-__interrupt void Port_3(void)
-{
-    P3IE &= ~BIT5;                  // Disable Interrupt on P3.5
-    // Set packet semaphore
-	packetSemaphore = ISR_ACTION_REQUIRED;
-
-    P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
-
-}
+//#pragma vector=PORT3_VECTOR
+//__interrupt void Port_3(void)
+//{
+//    P3IE &= ~BIT5;                  // Disable Interrupt on P3.5
+//    // Set packet semaphore
+//	packetSemaphore = ISR_ACTION_REQUIRED;
+//
+//    P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
+//
+//}
 
 
 
