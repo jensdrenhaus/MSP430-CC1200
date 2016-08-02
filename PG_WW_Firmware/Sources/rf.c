@@ -19,9 +19,11 @@
 //#############################################################################
 // globals
 
-static RF_CB    g_callback;
-static uint8  packetSemaphore;
+static RF_CB  g_callback;
 static uint32 packetCounter = 0;
+// Initialize packet buffers of size PKTLEN + 1
+uint8 txBuffer[PKTLEN+1] = {0};
+uint8 rxBuffer[PKTLEN+1] = {0};
 
 //#############################################################################
 // private function prototypes
@@ -44,19 +46,19 @@ static void create_packet(uint8 txBuffer[]);
 //!  PUBLIC rf_init()
 //!
 ////////////////////////////////////////////////////////////////////////////
-void rf_init() {
+void rf_init(RF_CB callback) {
 
 	// ------------------------------------
 	// save funtion ptr to callback func.
 	// ------------------------------------
-	//g_callback = callback;
+	g_callback = callback;
 
 	rfStatus_t status;
 
 	spi_init(8);                    // SMCLK(1MHz) / 8 = 125kH
 
 	// ------------------------------------
-	// register configuration
+	// CC1200 configuration
 	// ------------------------------------
 	uint8 writeByte;
 	uint8 readByte = 0;
@@ -65,11 +67,6 @@ void rf_init() {
 	// Reset radio
 	spi_cmd_strobe(RF_SRES);
 
-//	// Read registers
-//	for(i = 0;
-//		i < (sizeof(preferredSettings)/sizeof(rfSetting_t)); i++) {
-//		status = read_reg(preferredSettings[i].addr, &readByte, 1);
-//	}
 
 	// Write registers to radio
 	for(i = 0;
@@ -84,8 +81,23 @@ void rf_init() {
 		status = read_reg(preferredSettings[i].addr, &readByte, 1);
 	}
 
+	// ------------------------------------
+	// register configuration for CC1200 GPIO
+	// ------------------------------------
+	// line connected to P3.5 looks like this:
+	//
+	//          start sending          sending complete
+	//               ___________________________
+	// _____________|                           |_________________
+	//
+	P3DIR &= ~BIT5;                 // Set P3.5 to input direction
+	P3REN |= BIT5;                  // Set P3.5 pullup/down Resistor
+	P3OUT &= ~BIT5;                 // Select P3.5 pull-down
+	P3IE  |= BIT5;                  // Enable Interrupt on P3.5
+	P3IES |= BIT5;                  // falling edge
+	P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
 
-
+	spi_cmd_strobe(RF_SRX);
 
 
 }
@@ -96,9 +108,6 @@ void rf_init() {
 //!
 ////////////////////////////////////////////////////////////////////////////
 void rf_send() {
-
-	// Initialize packet buffer of size PKTLEN + 1
-	uint8 txBuffer[PKTLEN+1] = {0};
 
 	uint8 status = 0;
 
@@ -115,7 +124,7 @@ void rf_send() {
 	P3DIR &= ~BIT5;                 // Set P3.5 to input direction
 	P3REN |= BIT5;                  // Set P3.5 pullup/down Resistor
 	P3OUT &= ~BIT5;                 // Select P3.5 pull-down
-//	P3IE  |= BIT5;                  // Enable Interrupt on P3.5
+	P3IE  &= ~BIT5;                 // Disable Interrupt on P3.5
 	P3IES |= BIT5;                  // falling edge
 	P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
 
@@ -140,9 +149,11 @@ void rf_send() {
 	while(!(P3IFG & BIT5));
 	status = spi_cmd_strobe(RF_SNOP);
 
-	// Clear semaphore flag
-	packetSemaphore = ISR_IDLE;
 
+	spi_cmd_strobe(RF_SRX);
+	P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
+	P3IE  |= BIT5;                  // Enable Interrupt on P3.5
+	P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
 }
 
 
@@ -231,149 +242,19 @@ static void create_packet(uint8 txBuffer[]) {
 // ??? ISR for RXTX
 
 //////////////////////////////////////////////////////////////////////////
-//#pragma vector=PORT3_VECTOR
-//__interrupt void Port_3(void)
-//{
-//    P3IE &= ~BIT5;                  // Disable Interrupt on P3.5
-//    // Set packet semaphore
-//	packetSemaphore = ISR_ACTION_REQUIRED;
-//
-//    P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
-//
-//}
+#pragma vector=PORT3_VECTOR
+__interrupt void Port_3(void)
+{
+    P3IE &= ~BIT5;                  // Disable Interrupt on P3.5
+
+    read_rx_fifo(rxBuffer, sizeof(rxBuffer));
+    g_callback();
+    spi_cmd_strobe(RF_SRX);
+
+    P3IE  |= BIT5;                  // Enable Interrupt on P3.5
+    P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
+
+}
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-///*------------------------------------------------------------------------------
-//| File: phy.c
-//|
-//| Implemts functionality for wired serial communication.
-//|
-//| Note: - uses UART A0 (backchannel UART) of MSP430 to commuinicate
-//|		- implements UART AO ISR
-// -----------------------------------------------------------------------------*/
-//
-//#include "phy.h"
-//#include "msp430fr5969.h"
-//#include <string.h>
-//
-//
-//
-////#############################################################################
-//// globals
-//
-//static char      buf [PHY_MAX_BUF];
-//static PHY_CB    g_callback;
-//
-//
-//
-////#############################################################################
-//// module methods implementation:
-////#############################################################################
-//
-//
-//////////////////////////////////////////////////////////////////////////////
-//
-////!  PUBLIC PHY_init()
-////!
-//////////////////////////////////////////////////////////////////////////////
-//void phy_init(PHY_CB callback) {
-//
-//	// ------------------------------------
-//	// save funtion ptr to callback func.
-//	// ------------------------------------
-//	g_callback = callback;
-//
-//
-//	// comment
-//
-//	P2SEL1 |= BIT0 | BIT1;          // Set port function to UART
-//	P2SEL0 &= ~(BIT0 | BIT1);       // Set port function to UART
-//
-//	UCA0CTLW0 = UCSWRST;            // Put eUSCI in reset
-//	UCA0CTLW0 |= UCSSEL__SMCLK;     // CLK = SMCLK
-//	// Baud Rate calculation
-//	// 1000000/(16*9600) = 6.510
-//	// Fractional portion = 0.510
-//	// User's Guide Table 21-4: UCBRSx = 0xAA
-//	// UCBRFx = int ( (6.510-6)*16) = 8
-//	UCA0BR0 = 6;                    // 8000000/16/9600
-//	UCA0BR1 = 0x00;                 // UCA0BR is a word register, set high byte
-//	UCA0MCTLW |= UCOS16 | UCBRF_8 | 0xAA00;
-//	UCA0CTLW0 &= ~UCSWRST;          // Initialize eUSCI
-//	UCA0IE |= UCRXIE;               // Enable RX Interrupt
-//
-//
-//}
-//
-//////////////////////////////////////////////////////////////////////////////
-//
-////!  PUBLIC PHY_send()
-////!
-//////////////////////////////////////////////////////////////////////////////
-//void phy_send(char *string) {
-//	int n = 0;
-//	while(1) {
-//		while(!(UCA0IFG&UCTXIFG));
-//		UCA0TXBUF = string[n];
-//		n++;
-//		if (string[n] == '\0') break;
-//
-//	}
-//}
-//
-//
-//
-////#############################################################################
-//// interrupt service routines:
-////#############################################################################
-//
-//
-//////////////////////////////////////////////////////////////////////////////
-//
-////! UART A0 ISR for communication intup
-////!
-//////////////////////////////////////////////////////////////////////////////
-////#pragma vector=USCI_A0_VECTOR
-////__interrupt void USCIA0RX_ISR(void)
-////{
-////	switch(__even_in_range(UCA0IV, USCI_UART_UCTXCPTIFG)) // check UART IFGs
-////	  {
-////	    case USCI_NONE: break;
-////	    case USCI_UART_UCRXIFG:
-////	    	strcat(buf, (const char*)&UCA0RXBUF);
-////			if(UCA0RXBUF == '\n'){
-////				g_callback(buf);
-////				strcpy(buf,"");
-////			}
-////	        break;
-////	    case USCI_UART_UCTXIFG: break;
-////	    case USCI_UART_UCSTTIFG: break;
-////	    case USCI_UART_UCTXCPTIFG: break;
-////	  }
-////
-////}
-//
-//

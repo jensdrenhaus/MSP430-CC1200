@@ -34,6 +34,7 @@ char* error_msg_id      = "That's not me\n";
 void process(com_data_t* recieve_data);
 void update_weight(int val);
 void enter();
+void rx_test();
 
 
 
@@ -47,20 +48,21 @@ void main(void) {
     com_init(process);
     sen_init(update_weight);
     //spi_init(8);
-    rf_init();
+    rf_init(rx_test);
 
     _EINT();                        // global interrupt enable
 
      while(1)
     {
+
+    	// do nothing
+    	// wait for interrupts
+
+
     	// spi test
 //    	uint8 addr = 0x01; // IOCFG2
 //    	uint8 data = 0x06; // some value
 //    	spi_reg_access(SPI_WRITE_SINGLE, addr, &data, 1);
-
-
-    	// do nothing
-    	// wait for interrupts
 
     	// test f�r softwaregruppe
 //    	com_send(&send_data);
@@ -94,6 +96,10 @@ void update_weight(int val) {
 void enter(){
 	ui_toggle_status();
 	rf_send();
+}
+
+void rx_test(){
+	ui_toggle_status();
 }
 
 

@@ -292,7 +292,7 @@ typedef uint8 rfStatus_t;
 
 //#############################################################################
 // callback function definition
-typedef void (*RF_CB)(char* string);
+typedef void (*RF_CB)();
 
 //#############################################################################
 // function prototypes
