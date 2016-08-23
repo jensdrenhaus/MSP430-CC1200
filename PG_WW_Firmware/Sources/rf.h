@@ -277,6 +277,10 @@
 #define RF_STATE_RXFIFO_ERROR       0x60
 #define RF_STATE_TXFIFO_ERROR       0x70
 
+
+
+#define RF_PKTLEN                   20 // 1 < PKTLEN < 126
+
 //#############################################################################
 // datatypes
 
@@ -292,7 +296,7 @@ typedef uint8 rfStatus_t;
 
 //#############################################################################
 // callback function definition
-typedef void (*RF_CB)();
+typedef void (*RF_CB)(uint8* rxBuffer);
 
 //#############################################################################
 // function prototypes

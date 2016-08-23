@@ -12,7 +12,7 @@
 #include "rf_reg_config.h"
 
 
-#define PKTLEN              8 // 1 < PKTLEN < 126
+
 #define ISR_ACTION_REQUIRED 1
 #define ISR_IDLE            0
 
@@ -21,9 +21,9 @@
 
 static RF_CB  g_callback;
 static uint32 packetCounter = 0;
-// Initialize packet buffers of size PKTLEN + 1
-uint8 txBuffer[PKTLEN+1] = {0};
-uint8 rxBuffer[PKTLEN+1] = {0};
+// Initialize packet buffers of size RF_PKTLEN + 1
+uint8 txBuffer[RF_PKTLEN+1] = {0};
+uint8 rxBuffer[RF_PKTLEN+1] = {0};
 
 //#############################################################################
 // private function prototypes
@@ -132,7 +132,7 @@ void rf_send() {
 	// Update packet counter
 	packetCounter++;
 
-	// Create a random packet with PKTLEN + 2 byte packet
+	// Create a random packet with RF_PKTLEN + 2 byte packet
 	// counter + n x random bytes
 	create_packet(txBuffer);
 
@@ -221,13 +221,13 @@ static rfStatus_t get_rx_status(){
 
 static void create_packet(uint8 txBuffer[]) {
 
-    txBuffer[0] = PKTLEN;                           // Length byte
+    txBuffer[0] = RF_PKTLEN;                           // Length byte
     txBuffer[1] = (uint8) (packetCounter >> 8);     // MSB of packetCounter
     txBuffer[2] = (uint8)  packetCounter;           // LSB of packetCounter
 
     // Fill rest of buffer with random bytes
     uint8 i;
-    for(i = 3; i < (PKTLEN + 1); i++) {
+    for(i = 3; i < (RF_PKTLEN + 1); i++) {
         txBuffer[i] = 0x11;
     }
 }
@@ -248,7 +248,7 @@ __interrupt void Port_3(void)
     P3IE &= ~BIT5;                  // Disable Interrupt on P3.5
 
     read_rx_fifo(rxBuffer, sizeof(rxBuffer));
-    g_callback();
+    g_callback(rxBuffer);
     spi_cmd_strobe(RF_SRX);
 
     P3IE  |= BIT5;                  // Enable Interrupt on P3.5

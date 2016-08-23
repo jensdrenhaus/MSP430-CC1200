@@ -12,6 +12,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <types.h>
+// zum test
+#include "ui.h"
 
 
 
@@ -30,6 +33,7 @@ com_data_t receive_data;
 //#############################################################################
 // private function prototypes
 static void interpreter(char* string);
+static void rf_interpreter(uint8* rxBuffer);
 
 
 //#############################################################################
@@ -46,6 +50,7 @@ void com_init(COM_CB callback) {
 
 	g_com_callback = callback;
 	serial_init(interpreter);
+	rf_init(rf_interpreter);
 
 }
 
@@ -96,6 +101,10 @@ static void interpreter(char* string){
 
 
 	g_com_callback(&receive_data);
+}
+
+static void rf_interpreter(uint8* rxBuffer){
+	ui_toggle_status();
 }
 
 

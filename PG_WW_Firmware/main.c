@@ -31,10 +31,10 @@ char* error_msg_command = "No valid command recieved\n";
 char* error_msg_id      = "That's not me\n";
 
 // Prototypes
-void process(com_data_t* recieve_data);
-void update_weight(int val);
-void enter();
-void rx_test();
+void data_recieved_event(com_data_t* recieve_data);
+void weight_changed_event(int val);
+void button_pressed_event();
+void rf_recieved_event();
 
 
 
@@ -44,11 +44,10 @@ void main(void) {
 
     WDTCTL = WDTPW | WDTHOLD;       // stop watchdog timer
 
-    ui_init(enter);
-    com_init(process);
-    sen_init(update_weight);
-    //spi_init(8);
-    rf_init(rx_test);
+    ui_init(button_pressed_event);
+    com_init(data_recieved_event);
+    sen_init(weight_changed_event);
+
 
     _EINT();                        // global interrupt enable
 
@@ -76,7 +75,7 @@ void main(void) {
 // callback funktions
 //#############################################################################
 
-void process (com_data_t* receive_data) {
+void data_recieved_event (com_data_t* receive_data) {
 	if(receive_data->command == PAGE)
 		if(receive_data->id == MY_BOX_ID)
 			ui_toggle_status();
@@ -89,19 +88,14 @@ void process (com_data_t* receive_data) {
 		serial_send(error_msg_command);
 }
 
-void update_weight(int val) {
+void weight_changed_event(int val) {
 	send_data.arg = (double)val;
 }
 
-void enter(){
+void button_pressed_event(){
 	ui_toggle_status();
 	rf_send();
 }
-
-void rx_test(){
-	ui_toggle_status();
-}
-
 
 
 //#############################################################################
