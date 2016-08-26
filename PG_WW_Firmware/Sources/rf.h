@@ -312,7 +312,7 @@ typedef void (*RF_CB)(uint8* rxBuffer);
 |
  -----------------------------------------------------------------------------*/
 extern void rf_init();
-extern void rf_send();
+extern void rf_send(char* data);
 
 
 

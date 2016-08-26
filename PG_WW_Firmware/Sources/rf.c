@@ -10,6 +10,7 @@
 #include "spi.h"
 #include "msp430fr5969.h"
 #include "rf_reg_config.h"
+#include "types.h"
 
 
 
@@ -107,7 +108,7 @@ void rf_init(RF_CB callback) {
 //!  PUBLIC rf_send()
 //!
 ////////////////////////////////////////////////////////////////////////////
-void rf_send() {
+void rf_send(char* data) {
 
 	uint8 status = 0;
 
@@ -134,7 +135,15 @@ void rf_send() {
 
 	// Create a random packet with RF_PKTLEN + 2 byte packet
 	// counter + n x random bytes
-	create_packet(txBuffer);
+	//create_packet(txBuffer);
+	txBuffer[0] = RF_PKTLEN+1;
+	uint8 n = 1;
+	while(1) {
+		txBuffer[n] = data[n-1];
+		n++;
+		if (data[n-1] == '\0') break;
+	}
+
 
 	// Write packet to TX FIFO
 	status = write_tx_fifo(txBuffer, sizeof(txBuffer));
@@ -154,6 +163,9 @@ void rf_send() {
 	P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
 	P3IE  |= BIT5;                  // Enable Interrupt on P3.5
 	P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
+
+	//flush tx fifo
+	spi_cmd_strobe(RF_SFTX);
 }
 
 

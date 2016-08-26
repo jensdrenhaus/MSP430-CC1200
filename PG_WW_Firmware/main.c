@@ -94,7 +94,7 @@ void weight_changed_event(int val) {
 
 void button_pressed_event(){
 	ui_toggle_status();
-	rf_send();
+	rf_send("test\n");
 }
 
 
