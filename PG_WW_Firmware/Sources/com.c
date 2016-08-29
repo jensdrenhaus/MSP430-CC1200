@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <types.h>
+#include <rf.h>
 // zum test
 #include "ui.h"
 
@@ -32,8 +33,7 @@ com_data_t receive_data;
 
 //#############################################################################
 // private function prototypes
-static void interpreter(char* string);
-static void rf_interpreter(uint8* rxBuffer);
+static void interpreter(char* string, com_src_t src);
 
 
 //#############################################################################
@@ -50,7 +50,7 @@ void com_init(COM_CB callback) {
 
 	g_com_callback = callback;
 	serial_init(interpreter);
-	rf_init(rf_interpreter);
+	rf_init(interpreter);
 
 }
 
@@ -60,7 +60,7 @@ void com_init(COM_CB callback) {
 //!  PUBLIC com_send()
 //!
 ////////////////////////////////////////////////////////////////////////////
-void com_send(com_data_t* data) {
+void com_send(com_data_t* data, com_dest_t dest) {
 	switch (data->command){
 	case PAGE:
 		sprintf(send_str, "PAGE %d\n", data->id);
@@ -73,7 +73,10 @@ void com_send(com_data_t* data) {
 	default:
 		strcpy(send_str, "ERROR\n");
 	}
-	serial_send(send_str);
+	if (dest == DEST_SERIAL)
+		serial_send(send_str);
+	if (dest == DEST_RF)
+		rf_send(send_str);
 }
 
 
@@ -82,7 +85,7 @@ void com_send(com_data_t* data) {
 //! PRIVATE interpreter()
 //!
 ////////////////////////////////////////////////////////////////////////////
-static void interpreter(char* string){
+static void interpreter(char* string, com_src_t src){
 	char *ptr;
 	ptr = strtok(string, " ");
 	if(!strcmp(ptr, "PAGE"))
@@ -99,12 +102,7 @@ static void interpreter(char* string){
 	if(ptr)
 		receive_data.arg = atof(ptr);
 
-
-	g_com_callback(&receive_data);
-}
-
-static void rf_interpreter(uint8* rxBuffer){
-	ui_toggle_status();
+	g_com_callback(&receive_data, src);
 }
 
 

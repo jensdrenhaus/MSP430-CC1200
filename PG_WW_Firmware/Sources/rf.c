@@ -23,8 +23,9 @@
 static RF_CB  g_callback;
 static uint32 packetCounter = 0;
 // Initialize packet buffers of size RF_PKTLEN + 1
-uint8 txBuffer[RF_PKTLEN+1] = {0};
-uint8 rxBuffer[RF_PKTLEN+1] = {0};
+static uint8 txBuffer[RF_PKTLEN+1] = {0};
+static uint8 rxBuffer[RF_PKTLEN+1] = {0};
+static char buf [RF_PKTLEN+1];
 
 //#############################################################################
 // private function prototypes
@@ -133,10 +134,10 @@ void rf_send(char* data) {
 	// Update packet counter
 	packetCounter++;
 
-	// Create a random packet with RF_PKTLEN + 2 byte packet
-	// counter + n x random bytes
-	//create_packet(txBuffer);
-	txBuffer[0] = RF_PKTLEN+1;
+	// copy data string into txBuffer
+	// add length byte
+
+	txBuffer[0] = RF_PKTLEN;
 	uint8 n = 1;
 	while(1) {
 		txBuffer[n] = data[n-1];
@@ -144,10 +145,8 @@ void rf_send(char* data) {
 		if (data[n-1] == '\0') break;
 	}
 
-
 	// Write packet to TX FIFO
 	status = write_tx_fifo(txBuffer, sizeof(txBuffer));
-
 
 	// Strobe TX to send packet
 	spi_cmd_strobe(RF_STX);
@@ -165,7 +164,7 @@ void rf_send(char* data) {
 	P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
 
 	//flush tx fifo
-	spi_cmd_strobe(RF_SFTX);
+	//spi_cmd_strobe(RF_SFTX);
 }
 
 
@@ -260,7 +259,14 @@ __interrupt void Port_3(void)
     P3IE &= ~BIT5;                  // Disable Interrupt on P3.5
 
     read_rx_fifo(rxBuffer, sizeof(rxBuffer));
-    g_callback(rxBuffer);
+    uint8 n = 0;
+    do{
+    	buf[n] = rxBuffer[n+1];
+    	n++;
+    } while (rxBuffer[n+1] != '\n');
+    g_callback(buf, SRC_RF);
+    spi_cmd_strobe(RF_SFRX);
+    spi_cmd_strobe(RF_SNOP);
     spi_cmd_strobe(RF_SRX);
 
     P3IE  |= BIT5;                  // Enable Interrupt on P3.5

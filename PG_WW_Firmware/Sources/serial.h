@@ -18,6 +18,8 @@
 #ifndef _SERIAL_H_
 #define _SERIAL_H_
 
+#include "com.h"
+
 #define SERIAL_MAX_BUF		50
 
 
@@ -28,7 +30,7 @@
 
 //#############################################################################
 // callback function definition
-typedef void (*SERIAL_CB)(char* string);
+typedef void (*SERIAL_CB)(char* string, com_src_t src);
 
 //#############################################################################
 // function prototypes

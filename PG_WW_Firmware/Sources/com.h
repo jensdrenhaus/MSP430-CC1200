@@ -22,7 +22,8 @@
 
 //#############################################################################
 // datatypes
-
+typedef enum e_source {SRC_RF, SRC_SERIAL}com_src_t;
+typedef enum e_destination {DEST_RF, DEST_SERIAL}com_dest_t;
 typedef enum e_commands {NONE = 0, PAGE = 1, WEIGHT = 2}com_command_t;
 
 /* structure to hold commands */
@@ -37,7 +38,7 @@ typedef struct s_com_data {
 
 //#############################################################################
 // callback function definition
-typedef void (*COM_CB)(com_data_t* data);
+typedef void (*COM_CB)(com_data_t* data, com_src_t src);
 
 //#############################################################################
 // functions (prototypes)
@@ -64,7 +65,7 @@ extern void com_init(COM_CB callback);
 |     -
 |
  -----------------------------------------------------------------------------*/
-extern void com_send(com_data_t* data);
+extern void com_send(com_data_t* data, com_dest_t dest);
 
 
 

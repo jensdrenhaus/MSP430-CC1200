@@ -25,13 +25,13 @@
 
 // Globals
 int pressed = 0;
-const int MY_BOX_ID = 42;
-com_data_t send_data = {WEIGHT, 42, 100.12};
+const int MY_BOX_ID = 1;
+com_data_t send_data = {WEIGHT, MY_BOX_ID, 0};
 char* error_msg_command = "No valid command recieved\n";
 char* error_msg_id      = "That's not me\n";
 
 // Prototypes
-void data_recieved_event(com_data_t* recieve_data);
+void data_recieved_event(com_data_t* recieve_data, com_src_t src);
 void weight_changed_event(int val);
 void button_pressed_event();
 void rf_recieved_event();
@@ -75,17 +75,23 @@ void main(void) {
 // callback funktions
 //#############################################################################
 
-void data_recieved_event (com_data_t* receive_data) {
-	if(receive_data->command == PAGE)
-		if(receive_data->id == MY_BOX_ID)
-			ui_toggle_status();
-		else
-			serial_send(error_msg_id);
-	else if(receive_data->command == WEIGHT) {
-		com_send(receive_data);
+void data_recieved_event (com_data_t* receive_data, com_src_t src) {
+	switch(src){
+	case SRC_RF:
+		if(receive_data->command == PAGE){
+			if(receive_data->id == MY_BOX_ID)
+				ui_toggle_status();
+		}
+		else if(receive_data->command == WEIGHT)
+			com_send(receive_data, DEST_SERIAL);
+		break;
+
+	case SRC_SERIAL:
+		if(receive_data->command == PAGE)
+			com_send(receive_data, DEST_RF);
+		break;
+
 	}
-	else
-		serial_send(error_msg_command);
 }
 
 void weight_changed_event(int val) {
@@ -94,7 +100,7 @@ void weight_changed_event(int val) {
 
 void button_pressed_event(){
 	ui_toggle_status();
-	rf_send("test\n");
+	com_send(&send_data, DEST_RF);
 }
 
 
@@ -117,7 +123,7 @@ __interrupt void Timer0_A1(void)
 		// count to 4 secounds
 		send_cnt++;
 		if(send_cnt == 4){
-			com_send(&send_data);
+//			com_send(&send_data, DEST_RF);
 			send_cnt = 0;
 		}
 	}

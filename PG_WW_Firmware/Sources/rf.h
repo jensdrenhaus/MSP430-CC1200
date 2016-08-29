@@ -16,6 +16,7 @@
 #define _RF_H_
 
 #include "types.h"
+#include "com.h"
 
 
 #define RF_IOCFG3                   0x0000
@@ -296,7 +297,7 @@ typedef uint8 rfStatus_t;
 
 //#############################################################################
 // callback function definition
-typedef void (*RF_CB)(uint8* rxBuffer);
+typedef void (*RF_CB)(char* buf, com_src_t src);
 
 //#############################################################################
 // function prototypes
