@@ -20,12 +20,15 @@
 #include "ui.h"
 #include "com.h"
 #include "sensor.h"
-#include "spi.h"
-#include "rf.h"
+
+
+
+#define  MY_BOX_ID  1
+
+
 
 // Globals
 int pressed = 0;
-const int MY_BOX_ID = 1;
 com_data_t send_data = {WEIGHT, MY_BOX_ID, 0};
 char* error_msg_command = "No valid command recieved\n";
 char* error_msg_id      = "That's not me\n";
@@ -34,8 +37,6 @@ char* error_msg_id      = "That's not me\n";
 void data_recieved_event(com_data_t* recieve_data, com_src_t src);
 void weight_changed_event(int val);
 void button_pressed_event();
-void rf_recieved_event();
-
 
 
 
@@ -80,7 +81,7 @@ void data_recieved_event (com_data_t* receive_data, com_src_t src) {
 	case SRC_RF:
 		if(receive_data->command == PAGE){
 			if(receive_data->id == MY_BOX_ID)
-				ui_toggle_status();
+				ui_marker_on();
 		}
 		else if(receive_data->command == WEIGHT)
 			com_send(receive_data, DEST_SERIAL);
@@ -99,13 +100,12 @@ void weight_changed_event(int val) {
 }
 
 void button_pressed_event(){
-	ui_toggle_status();
-	com_send(&send_data, DEST_RF);
+	ui_marker_off();
 }
 
 
 //#############################################################################
-// Timer A1 ISR for periodic events
+// Timer A1 ISR for periodic events every half secound
 //#############################################################################
 #pragma vector=TIMER1_A0_VECTOR
 __interrupt void Timer0_A1(void)
@@ -123,11 +123,11 @@ __interrupt void Timer0_A1(void)
 		// count to 4 secounds
 		send_cnt++;
 		if(send_cnt == 4){
-//			com_send(&send_data, DEST_RF);
+			com_send(&send_data, DEST_RF);
 			send_cnt = 0;
 		}
 	}
 	tick ^= 1;                   // toggel tick state
-	ui_tick();
+	ui_tick();					 // blik red led to show programm is ok and working
 }
 

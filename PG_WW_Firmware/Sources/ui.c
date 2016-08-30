@@ -64,6 +64,9 @@ void ui_init(UI_CB callback){
 	// Configure GPIO LEDs
 	P1DIR |= BIT0;                  // Set P1.0 to output direction
 	P4DIR |= BIT6;                  // Set P4.6 to output direction
+
+	P1OUT &= ~BIT0;                // reset green LED
+
 	// Configure GPIO Button
 	P1DIR &= ~BIT1;                 // Set P1.1 to input direction
 	P1REN |= BIT1;                  // Set P1.1 pullup/down Resistor
@@ -84,6 +87,13 @@ void ui_toggle_status(){
 //	while(!(UCA0IFG&UCTXIFG));
 //	UCA0TXBUF = 0x0D;           // send CR
 	P1OUT ^= BIT0;              // toggle green LED
+}
+
+void ui_marker_on(){
+	P1OUT |= BIT0;              // set green LED
+}
+void ui_marker_off(){
+	P1OUT &= ~BIT0;             // reset green LED
 }
 
 //#############################################################################

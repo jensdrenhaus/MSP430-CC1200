@@ -49,6 +49,8 @@ extern void ui_init(UI_CB callback);
 extern void ui_tick();
 
 extern void ui_toggle_status();
+extern void ui_marker_on();
+extern void ui_marker_off();
 
 
 
