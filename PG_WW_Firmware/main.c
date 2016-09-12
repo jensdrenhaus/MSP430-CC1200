@@ -20,6 +20,7 @@
 #include "ui.h"
 #include "com.h"
 #include "sensor.h"
+#include "scale.h"
 
 
 
@@ -44,10 +45,13 @@ void button_pressed_event();
 void main(void) {
 
     WDTCTL = WDTPW | WDTHOLD;       // stop watchdog timer
+//    WDTCTL = WDTPW | WDTHOLD;
+//    WDTCTL = WDTPW | WDTHOLD;
 
     ui_init(button_pressed_event);
     com_init(data_recieved_event);
     sen_init(weight_changed_event);
+    scale_init();
 
 
     _EINT();                        // global interrupt enable
@@ -117,10 +121,10 @@ __interrupt void Timer0_A1(void)
 		//check sensor
 		sen_request();
 
-//		//Ping SPI -> will trap into inf. loop !!!
-//		uint8 test;
-//		spi_reg_access(0x00, 0b00101010, &test, 1);
-		// count to 4 secounds
+		// Test analoge waage
+		float weight = scale_request();
+		send_data.arg = (double)weight;
+//
 		send_cnt++;
 		if(send_cnt == 4){
 			com_send(&send_data, DEST_RF);
