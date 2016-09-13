@@ -59,12 +59,26 @@ void scale_init(){
 	REFCTL0 |= REFVSEL_0 | REFON;             // Select internal ref = 1.2V
 
 
-	ADC12CTL0   = ADC12SHT0_2 | ADC12ON | ADC12MSC;
-	ADC12CTL1  |= ADC12SHP    | ADC12CONSEQ_1; // ADCCLK = MODOSC; sampling timer
-	ADC12MCTL0 |= ADC12INCH_12 | ADC12VRSEL_1;  // A3 ADC input select; Vref=1.2V
-	// CUSTOM
+	ADC12CTL0 &= ~ADC12ENC; // disable conversion for configuring controll regs
 
-	ADC12CTL2 |= ADC12RES_2;                  // 12-bit conversion results
+	ADC12CTL0 |=  ADC12ON;  // enable core
+	// SHT0 SHT1 default  4 ADC12CLK cycles in sampling period
+
+	ADC12CTL1 |=  ADC12SSEL_3;   // SMCLK as clock
+	ADC12CTL1 |=  ADC12SHP;      // sampling timer
+	// CONSEQ default   single-channel, single-conversion
+	// DIV    default   1
+    // PDIV   default   1
+	// SHS    default   ADC12SC bit triggers sampling
+
+	ADC12CTL2 |=  ADC12RES_2 // 12 bit resolution
+
+//	ADC12CTL0   = ADC12SHT0_2 | ADC12ON | ADC12MSC;
+//	ADC12CTL1  |= ADC12SHP    | ADC12CONSEQ_1; // ADCCLK = MODOSC; sampling timer
+//	ADC12MCTL0 |= ADC12INCH_12 | ADC12VRSEL_1;  // A3 ADC input select; Vref=1.2V
+//	// CUSTOM
+//
+//	ADC12CTL2 |= ADC12RES_2;                  // 12-bit conversion results
 
 	while(!(REFCTL0 & REFGENRDY));            // Wait for reference generator
 										      // to settle

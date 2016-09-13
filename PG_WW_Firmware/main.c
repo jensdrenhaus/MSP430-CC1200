@@ -122,8 +122,8 @@ __interrupt void Timer0_A1(void)
 		sen_request();
 
 		// Test analoge waage
-		float weight = scale_request();
-		send_data.arg = (double)weight;
+		//float weight = scale_request();
+		//send_data.arg = (double)weight;
 //
 		send_cnt++;
 		if(send_cnt == 4){
