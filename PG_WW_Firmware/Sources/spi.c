@@ -38,6 +38,11 @@ static void data_transfer(uint8 header, uint8 *data, uint16 len);
 ////////////////////////////////////////////////////////////////////////////
 void spi_init(uint8 prescaler) {
 
+	//######## nur für eigene Platinenversion: resetline von CC1200 ist auf
+	// MSP P1.2 gelegt.
+	P1DIR |= BIT2;
+	P1OUT |= BIT2; // set P1.2 HIGH -> cc1200 reset HIGH
+
 	UCB0CTLW0 |= UCSWRST; // SPI module in reset state
 
 	/* MOSI     -> P1.6   MOSI is secoundary module function on port 1
