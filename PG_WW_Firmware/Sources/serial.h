@@ -19,6 +19,7 @@
 #define _SERIAL_H_
 
 #include "com.h"
+#include "types.h"
 
 #define SERIAL_MAX_BUF		50
 
@@ -58,6 +59,9 @@ extern void serial_init(SERIAL_CB callback);
 |
  -----------------------------------------------------------------------------*/
 extern void serial_send(char *string);
+
+extern void serial_debug_byte(uint8 byte);
+extern void serial_debug_word(uint16 byte);
 
 
 

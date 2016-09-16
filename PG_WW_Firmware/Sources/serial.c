@@ -10,6 +10,7 @@
 #include <serial.h>
 #include "msp430fr5969.h"
 #include <string.h>
+#include "types.h"
 
 
 
@@ -73,6 +74,21 @@ void serial_send(char *string) {
 		if (string[n] == '\0') break;
 
 	}
+}
+
+void serial_debug_byte(uint8 byte) {
+	while(!(UCA0IFG&UCTXIFG));
+	UCA0TXBUF = byte;
+}
+
+void serial_debug_word(uint16 word) {
+	// send high-byte first
+	uint8 byte = word>>8;
+	while(!(UCA0IFG&UCTXIFG));
+	UCA0TXBUF = byte;
+	byte = (uint8) word;
+	while(!(UCA0IFG&UCTXIFG));
+	UCA0TXBUF = byte;
 }
 
 

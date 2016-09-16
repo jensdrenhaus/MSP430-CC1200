@@ -119,11 +119,11 @@ __interrupt void Timer0_A1(void)
 
 	if (tick){
 		//check sensor
-		sen_request();
+		//sen_request();
 
-		// Test analoge waage
-		//float weight = scale_request();
-		//send_data.arg = (double)weight;
+		//Test analoge waage
+		uint16 weight = scale_request();
+		send_data.arg = (double)weight;
 //
 		send_cnt++;
 		if(send_cnt == 4){

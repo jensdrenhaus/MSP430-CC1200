@@ -8,6 +8,8 @@
 
 #include "scale.h"
 #include "msp430fr5969.h"
+// due to testing
+#include "serial.h"
 
 
 
@@ -15,26 +17,17 @@
 // globals
 
 
-#define CONVERSION_VALUE_1_2 0.29296875 // Vref 1200mV / 4095 (12 bit ADC resolution)
+static float ZERO_OFFSET              =   370.0;
+static float CALIBRATION_LOAD_WEIGHT  =  2009.0;  // 2 Liter Wasserflasche
+static float CALIBRATION_LOAD_VALUE   =  2921.0;
 
-static float WeightHandy=181;
-static float VoltageHandy=78;
-
-static unsigned int ZERO_OFFSET=290;
-static float GRAMS_PER_MEASUREMENT;
-
-static unsigned int ADC_value=0;
-
-static float OldMeasure=0;
-static float weight=0;
+static float gramms_per_value;
 
 
 
 //#############################################################################
 // private function prototypes
-static int get_adc();
-static int filter();
-static float calculate_Weight(unsigned int ADC_value);
+static uint16 calculate_weight(uint16 ADC_val);
 
 
 //#############################################################################
@@ -49,20 +42,21 @@ static float calculate_Weight(unsigned int ADC_value);
 ////////////////////////////////////////////////////////////////////////////
 void scale_init(){
 
-	GRAMS_PER_MEASUREMENT = WeightHandy/VoltageHandy;
+	gramms_per_value = CALIBRATION_LOAD_WEIGHT / (CALIBRATION_LOAD_VALUE - ZERO_OFFSET);
 
 	// GPIO Setup
-	P3SEL1 |= BIT0;                           // Configure P1.1 for ADC
+	P3SEL1 |= BIT0;                           // Configure P3.0 for ADC
 	P3SEL0 |= BIT0;
 
 	while(REFCTL0 & REFGENBUSY);              // If ref generator busy, WAIT
-	REFCTL0 |= REFVSEL_0 | REFON;             // Select internal ref = 1.2V
+	REFCTL0 |= REFVSEL_2 | REFON;             // Select internal ref = 2,5V
 
 
 	ADC12CTL0 &= ~ADC12ENC; // disable conversion for configuring controll regs
 
 	ADC12CTL0 |=  ADC12ON;  // enable core
-	// SHT0 SHT1 default  4 ADC12CLK cycles in sampling period
+	ADC12CTL0 |= ADC12SHT0_1; // 8 cycles per sampling period
+
 
 	ADC12CTL1 |=  ADC12SSEL_3;   // SMCLK as clock
 	ADC12CTL1 |=  ADC12SHP;      // sampling timer
@@ -71,17 +65,14 @@ void scale_init(){
     // PDIV   default   1
 	// SHS    default   ADC12SC bit triggers sampling
 
-	ADC12CTL2 |=  ADC12RES_2 // 12 bit resolution
+	ADC12CTL2 |=  ADC12RES_2; // 12 bit resolution
 
-//	ADC12CTL0   = ADC12SHT0_2 | ADC12ON | ADC12MSC;
-//	ADC12CTL1  |= ADC12SHP    | ADC12CONSEQ_1; // ADCCLK = MODOSC; sampling timer
-//	ADC12MCTL0 |= ADC12INCH_12 | ADC12VRSEL_1;  // A3 ADC input select; Vref=1.2V
-//	// CUSTOM
-//
-//	ADC12CTL2 |= ADC12RES_2;                  // 12-bit conversion results
+	ADC12MCTL0 |= ADC12INCH_12; // connect A12(P3.0) to MEM register 0
+	ADC12MCTL0 |= ADC12VRSEL_1;  // set V+ to VRef (2,5V), V- to AVss(0V)
 
-	while(!(REFCTL0 & REFGENRDY));            // Wait for reference generator
-										      // to settle
+
+	ADC12CTL0 |= ADC12ENC; // enable ADC for conversion
+
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -89,11 +80,24 @@ void scale_init(){
 //!  PUBLIC sen_request()
 //!
 ////////////////////////////////////////////////////////////////////////////
-float scale_request() {
-	ADC12CTL0 |= ADC12ENC | ADC12SC;        // Start sampling/conversion
-	ADC_value = ADC12MEM0;
+uint16 scale_request() {
+	uint8 i;
+	uint32 val = 0;
+	float weight = 0;
 
-	weight=calculate_Weight(ADC_value);
+//	ADC12CTL0 |=  ADC12SC;        // Start sampling/conversion
+//	while(!(ADC12IFGR0 & ADC12IFG0));
+//	val += ADC12MEM0;
+
+	for(i=0; i<100; i++){
+		ADC12CTL0 |=  ADC12SC;        // Start sampling/conversion
+		while(!(ADC12IFGR0 & ADC12IFG0));
+		val += ADC12MEM0;
+	}
+	val /= (i+1);
+	weight = calculate_weight(val);
+	//serial_debug_word((uint16)val);
+
 	return weight;
 }
 
@@ -106,23 +110,14 @@ int get_adc() {
 	return 0;
 }
 
-int filter() {
-	float NewMeasure=0;
-	NewMeasure=(((ADC_value*2)+2*OldMeasure)/4);
-	OldMeasure=NewMeasure;
-	return NewMeasure;
-}
 
-float calculate_Weight(unsigned int ADC_value){
+uint16 calculate_weight(uint16 ADC_val){
 
-	ADC_value=filter(ADC_value);
+	float weight = 0;
+	weight = ADC_val - ZERO_OFFSET;
+	weight = weight * gramms_per_value;
 
-	ADC_value = ADC_value*CONVERSION_VALUE_1_2;
-	ADC_value = ADC_value-ZERO_OFFSET;
-	ADC_value = ADC_value*GRAMS_PER_MEASUREMENT;
-	if (ADC_value > 60000)
-		ADC_value=0;
-    return ADC_value;
+	return (uint16)weight;
 
 }
 

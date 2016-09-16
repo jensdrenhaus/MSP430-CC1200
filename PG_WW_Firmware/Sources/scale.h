@@ -17,6 +17,10 @@
 #ifndef _SCALE_H_
 #define _SCALE_H_
 
+#include "types.h"
+
+
+
 
 
 //#############################################################################
@@ -40,7 +44,7 @@
  -----------------------------------------------------------------------------*/
 extern void scale_init();
 
-extern float scale_request();
+extern uint16 scale_request();
 
 extern void scale_calibrate();
 
