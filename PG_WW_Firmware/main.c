@@ -26,7 +26,7 @@
 
 #define  MY_BOX_ID  0
 
-
+typedef enum e_state{active, calibrating_zero, calibrating_load, waiting}state_t;
 
 // Globals
 int pressed = 0;
@@ -34,8 +34,7 @@ com_data_t send_data = {WEIGHT, MY_BOX_ID, 0};
 char* error_msg_command = "No valid command recieved\n";
 char* error_msg_id      = "That's not me\n";
 
-#pragma PERSISTENT(x)
-uint8 x = 5;
+state_t state = active;
 
 // Prototypes
 void data_recieved_event(com_data_t* recieve_data, com_src_t src);
@@ -85,21 +84,23 @@ void main(void) {
 //#############################################################################
 
 void data_recieved_event (com_data_t* receive_data, com_src_t src) {
-	switch(src){
-	case SRC_RF:
-		if(receive_data->command == PAGE){
-			if(receive_data->id == MY_BOX_ID)
-				ui_marker_on();
+	if(state == active){
+		switch(src){
+		case SRC_RF:
+			if(receive_data->command == PAGE){
+				if(receive_data->id == MY_BOX_ID)
+					ui_marker_on();
+			}
+			else if(receive_data->command == WEIGHT)
+				com_send(receive_data, DEST_SERIAL);
+			break;
+
+		case SRC_SERIAL:
+			if(receive_data->command == PAGE)
+				com_send(receive_data, DEST_RF);
+			break;
+
 		}
-		else if(receive_data->command == WEIGHT)
-			com_send(receive_data, DEST_SERIAL);
-		break;
-
-	case SRC_SERIAL:
-		if(receive_data->command == PAGE)
-			com_send(receive_data, DEST_RF);
-		break;
-
 	}
 }
 
@@ -112,7 +113,14 @@ void button1_pressed_event(){
 }
 
 void button2_pressed_event(){
-	ui_marker_on();
+	switch(state){
+	case active:
+		state = calibrating_zero;
+		break;
+	case waiting:
+		state = calibrating_load;
+		break;
+	}
 }
 
 
@@ -122,25 +130,61 @@ void button2_pressed_event(){
 #pragma vector=TIMER1_A0_VECTOR
 __interrupt void Timer1_A0(void)
 {
-	static int tick     = 1;        // set state for full secound
-	static int send_cnt = 0;
+	static int tick      = 1;        // set state for full secound
+	static int send_cnt  = 0;
+	static int calib_cnt = 0;
+	static uint16 calib_val = 0;
 
-	if (tick){
-		//check sensor
-		//sen_request();
+	switch(state){
+	case active:
+		if (tick){
+			//check sensor
+			//sen_request();
 
-		//Test analoge waage
-		uint16 weight = scale_request();
-		send_data.arg = (double)weight;
+			//Test analoge waage
+			uint16 weight = scale_request();
+			send_data.arg = (double)weight;
 
 
-		send_cnt++;
-		if(send_cnt == 4){
-			com_send(&send_data, DEST_RF);
-			send_cnt = 0;
+			send_cnt++;
+			if(send_cnt == 4){
+				com_send(&send_data, DEST_RF);
+				send_cnt = 0;
+			}
 		}
+		tick ^= 1;                   // toggel tick state
+		ui_tick();					 // blik red led to show programm is ok and working
+		break;
+	case calibrating_zero:
+		ui_red_on();
+		ui_toggle_status();
+		calib_cnt++;
+		calib_val += scale_get_adc();
+		if(calib_cnt == 12){
+			scale_set_zero_offset(calib_val/12);
+			state = waiting;
+			ui_red_off();
+			calib_cnt = 0;
+			calib_val = 0;
+		}
+		break;
+	case waiting:
+		ui_toggle_status();
+		break;
+	case calibrating_load:
+		ui_red_on();
+		ui_toggle_status();
+		calib_cnt++;
+		calib_val += scale_get_adc();
+		if(calib_cnt == 12){
+			scale_set_calib_load_value(calib_val/12);
+			state = active;
+			ui_red_off();
+			calib_cnt = 0;
+			calib_val = 0;
+		}
+		break;
 	}
-	tick ^= 1;                   // toggel tick state
-	ui_tick();					 // blik red led to show programm is ok and working
 }
+
 

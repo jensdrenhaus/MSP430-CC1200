@@ -16,12 +16,15 @@
 //#############################################################################
 // globals
 
-
-static float ZERO_OFFSET              =   370.0;
 static float CALIBRATION_LOAD_WEIGHT  =  2009.0;  // 2 Liter Wasserflasche
+static float gramms_per_value;
+
+#pragma PERSISTENT(ZERO_OFFSET)
+static float ZERO_OFFSET              =   370.0;
+#pragma PERSISTENT(CALIBRATION_LOAD_VALUE)
 static float CALIBRATION_LOAD_VALUE   =  2921.0;
 
-static float gramms_per_value;
+
 
 
 
@@ -101,13 +104,41 @@ uint16 scale_request() {
 	return weight;
 }
 
+
+////////////////////////////////////////////////////////////////////////////
+
+//!  PUBLIC
+//!
+////////////////////////////////////////////////////////////////////////////
+void scale_set_zero_offset(uint16 val){
+	ZERO_OFFSET = (float)val;
+}
+
+
+////////////////////////////////////////////////////////////////////////////
+
+//!  PUBLIC
+//!
+////////////////////////////////////////////////////////////////////////////
+void scale_set_calib_load_value(uint16 val){
+	CALIBRATION_LOAD_VALUE = (float)val;
+}
+
 ////////////////////////////////////////////////////////////////////////////
 
 //!  PRIVATE converter()
 //!
 ////////////////////////////////////////////////////////////////////////////
-int get_adc() {
-	return 0;
+uint16 scale_get_adc() {
+	uint8 i;
+	uint32 val = 0;
+	for(i=0; i<100; i++){
+		ADC12CTL0 |=  ADC12SC;        // Start sampling/conversion
+		while(!(ADC12IFGR0 & ADC12IFG0));
+		val += ADC12MEM0;
+	}
+	val /= (i+1);
+	return val;
 }
 
 
