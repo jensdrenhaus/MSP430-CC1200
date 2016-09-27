@@ -40,7 +40,8 @@ uint8 x = 5;
 // Prototypes
 void data_recieved_event(com_data_t* recieve_data, com_src_t src);
 void weight_changed_event(int val);
-void button_pressed_event();
+void button1_pressed_event();
+void button2_pressed_event();
 
 
 
@@ -51,7 +52,7 @@ void main(void) {
 //    WDTCTL = WDTPW | WDTHOLD;
 //    WDTCTL = WDTPW | WDTHOLD;
 
-    ui_init(button_pressed_event);
+    ui_init(button1_pressed_event, button2_pressed_event);
     com_init(data_recieved_event);
     sen_init(weight_changed_event);
     scale_init();
@@ -106,8 +107,12 @@ void weight_changed_event(int val) {
 	send_data.arg = (double)val;
 }
 
-void button_pressed_event(){
+void button1_pressed_event(){
 	ui_marker_off();
+}
+
+void button2_pressed_event(){
+	ui_marker_on();
 }
 
 
@@ -115,7 +120,7 @@ void button_pressed_event(){
 // Timer A1 ISR for periodic events every half secound
 //#############################################################################
 #pragma vector=TIMER1_A0_VECTOR
-__interrupt void Timer0_A1(void)
+__interrupt void Timer1_A0(void)
 {
 	static int tick     = 1;        // set state for full secound
 	static int send_cnt = 0;

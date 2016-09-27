@@ -44,7 +44,7 @@ typedef void (*UI_CB)();
 |     ---
 |
  -----------------------------------------------------------------------------*/
-extern void ui_init(UI_CB callback);
+extern void ui_init(UI_CB callback1, UI_CB callback2);
 
 extern void ui_tick();
 
