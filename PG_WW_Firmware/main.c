@@ -24,7 +24,7 @@
 
 
 
-#define  MY_BOX_ID  1
+#define  MY_BOX_ID  0
 
 
 
@@ -33,6 +33,9 @@ int pressed = 0;
 com_data_t send_data = {WEIGHT, MY_BOX_ID, 0};
 char* error_msg_command = "No valid command recieved\n";
 char* error_msg_id      = "That's not me\n";
+
+#pragma PERSISTENT(x)
+uint8 x = 5;
 
 // Prototypes
 void data_recieved_event(com_data_t* recieve_data, com_src_t src);
@@ -124,7 +127,8 @@ __interrupt void Timer0_A1(void)
 		//Test analoge waage
 		uint16 weight = scale_request();
 		send_data.arg = (double)weight;
-//
+
+
 		send_cnt++;
 		if(send_cnt == 4){
 			com_send(&send_data, DEST_RF);
