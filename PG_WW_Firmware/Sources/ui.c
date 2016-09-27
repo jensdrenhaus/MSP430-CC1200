@@ -8,6 +8,7 @@
 
 #include "ui.h"
 #include "msp430fr5969.h"
+#include "types.h"
 
 //#############################################################################
 // globals
@@ -16,6 +17,7 @@ static UI_CB g_ui_callback1;
 static UI_CB g_ui_callback2;
 static int pressed1 = 0;
 static int pressed2 = 0;
+static uint8 cnt = 0;
 
 
 
@@ -171,9 +173,9 @@ __interrupt void Timer0_A0(void)
 __interrupt void Port_4(void)
 {
     P4IE &= ~BIT5;                  // Disable Interrupt on P1.1
-    P4IFG &= ~BIT5;                 // clear P1.1 interrupt flag
+    P4IFG &= ~BIT5;                 // clear P4.5 interrupt flag
     TA2CCTL0 |= CCIE;               // TACCR0 interrupt enabled
-    TA2CTL |= TACLR;                // start Timer TA0
+    TA2CTL |= TACLR;                // start Timer TA2
     pressed2 = 1;                    // save buttonstate
 }
 
@@ -186,20 +188,35 @@ __interrupt void Port_4(void)
 __interrupt void Timer2_A0(void)
 {
     // check if button is still pressed
-    if (!(P1IN & BIT1) && pressed2) {
-        TA2CTL |= TACLR;            // reset Timer TA2
+    if (!(P4IN & BIT5) && pressed2) {
+    	cnt++;
+    	if(cnt>100){
+    		// ### button hold for 4 sec action ###
+			g_ui_callback2();
+			// ####################################
+
+			pressed2 = 0;
+			TA2CCTL0 &= ~CCIE;          // TACCR0 interrupt disabled
+			P4IFG &= ~BIT5;             // clear P4.5 interrupt flag
+			P4IE |= BIT5;               // Enable Interrupt on P4.5
+
+			cnt = 0;
+    	}
+    	TA2CTL |= TACLR;            // reset Timer TA2, another 40ms
     }
     // button released ?
     else if ((P4IN & BIT5) && pressed2) {
 
+    	cnt = 0;
+
         // ### button released action ###
-        g_ui_callback2();
+        // g_ui_callback2();
         // ###############################
 
         pressed2 = 0;
         TA2CCTL0 &= ~CCIE;          // TACCR0 interrupt disabled
-        P4IFG &= ~BIT5;             // clear P1.1 interrupt flag
-        P4IE |= BIT5;               // Enable Interrupt on P1.1
+        P4IFG &= ~BIT5;             // clear P4.5 interrupt flag
+        P4IE |= BIT5;               // Enable Interrupt on P4.5
     }
 }
 
