@@ -116,8 +116,8 @@ void rf_send(char* data) {
 
 	// Configure GPIO Interrupt
 	// no ISR no INT enable just set the right edge select
-	// for chekcing the ISR flag on P3.5 later for end of transmission
-	// line connected to P3.5 looks like this:
+	// for chekcing the ISR flag on P3.5 later for end of transmission.
+	// Line connected to P3.5 looks like this:
 	//
 	//          start sending          sending complete
 	//               ___________________________
@@ -152,8 +152,8 @@ void rf_send(char* data) {
 	spi_cmd_strobe(RF_STX);
 
 	// Wait for interruptflag that packet has been sent.
-	// (Assumes the CC1200-GPIO connected to P3.5 is
-	// set to GPIOx_CFG = 0x06)
+	// Assuming the CC1200-GPIO connected to P3.5 is
+	// set to GPIOx_CFG = 0x06 -> CC1200 PKT_SYNC_RXTX interrupt
 	while(!(P3IFG & BIT5));
 	status = spi_cmd_strobe(RF_SNOP);
 
