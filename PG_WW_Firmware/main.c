@@ -24,7 +24,7 @@
 
 
 
-#define  MY_BOX_ID  0
+#define  MY_BOX_ID  1
 
 typedef enum e_state{active, calibrating_zero, calibrating_load, waiting}state_t;
 
@@ -35,6 +35,8 @@ char* error_msg_command = "No valid command recieved\n";
 char* error_msg_id      = "That's not me\n";
 
 state_t state = active;
+
+uint16_t dev_discriptors[8];
 
 // Prototypes
 void data_recieved_event(com_data_t* recieve_data, com_src_t src);
@@ -50,6 +52,15 @@ void main(void) {
     WDTCTL = WDTPW | WDTHOLD;       // stop watchdog timer
 //    WDTCTL = WDTPW | WDTHOLD;
 //    WDTCTL = WDTPW | WDTHOLD;
+
+    dev_discriptors[0] = *((uint16*)0x1A0A);
+    dev_discriptors[1] = *((uint16*)0x1A0B);
+    dev_discriptors[2] = *((uint16*)0x1A0C);
+    dev_discriptors[3] = *((uint16*)0x1A0D);
+    dev_discriptors[4] = *((uint16*)0x1A0E);
+    dev_discriptors[5] = *((uint16*)0x1A0F);
+    dev_discriptors[6] = *((uint16*)0x1A10);
+    dev_discriptors[7] = *((uint16*)0x1A11);
 
     ui_init(button1_pressed_event, button2_pressed_event);
     com_init(data_recieved_event);
