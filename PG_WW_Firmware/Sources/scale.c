@@ -10,6 +10,7 @@
 #include "msp430fr5969.h"
 // due to testing
 #include "serial.h"
+#include "types.h"
 
 
 
