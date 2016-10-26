@@ -43,6 +43,7 @@
 |
  -----------------------------------------------------------------------------*/
 
+<<<<<<< HEAD
 
 extern uint16_t scale_request();
 
@@ -50,6 +51,14 @@ extern void scale_set_zero_offset(uint16_t val);
 
 extern void scale_set_calib_load_value(uint16_t val);
 
+=======
+extern uint16_t scale_request();
+
+extern void scale_set_zero_offset(uint16_t val);
+
+extern void scale_set_calib_load_value(uint16_t val);
+
+>>>>>>> 6df43dc... allmost working, problem at strok in interpreter
 extern uint16_t scale_get_adc();
 
 

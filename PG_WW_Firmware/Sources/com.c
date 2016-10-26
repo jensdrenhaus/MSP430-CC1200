@@ -12,7 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <types.h>
+#include "types.h"
 #include <rf.h>
 // zum test
 #include "ui.h"
@@ -63,10 +63,10 @@ void com_init(COM_CB callback) {
 void com_send(com_data_t* data, com_dest_t dest) {
 	switch (data->command){
 	case PAGE:
-		sprintf(send_str, "PAGE %d\n", data->id);
+		sprintf(send_str, "PAGE %lld\n", data->id);
 		break;
 	case WEIGHT:
-		sprintf(send_str, "WEIGHT %d %.3f \n", data->id, data->arg);
+		sprintf(send_str, "WEIGHT %lld %.3f \n", data->id, data->arg);
 //		dtoa(tempstr, data->arg);
 //		strcat(send_str, tempstr);
 		break;
@@ -97,7 +97,7 @@ static void interpreter(char* string, com_src_t src){
 
 	ptr = strtok(NULL, " ");
 	if(ptr)
-		receive_data.id = atoi(ptr);
+		receive_data.id = atoll(ptr);
 	ptr = strtok(NULL, " ");
 	if(ptr)
 		receive_data.arg = atof(ptr);

@@ -18,6 +18,8 @@
 #ifndef _COM_H_
 #define _COM_H_
 
+#include <stdint.h>
+
 
 
 //#############################################################################
@@ -29,7 +31,7 @@ typedef enum e_commands {NONE = 0, PAGE = 1, WEIGHT = 2}com_command_t;
 /* structure to hold commands */
 typedef struct s_com_data {
 		com_command_t command;
-		int           id;
+		uint64_t      id;
 		double	      arg;
 }com_data_t;
 

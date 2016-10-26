@@ -24,19 +24,20 @@
 
 
 
-#define  MY_BOX_ID  1
+
 
 typedef enum e_state{active, calibrating_zero, calibrating_load, waiting}state_t;
 
 // Globals
 int pressed = 0;
-com_data_t send_data = {WEIGHT, MY_BOX_ID, 0};
+com_data_t send_data;
 char* error_msg_command = "No valid command recieved\n";
 char* error_msg_id      = "That's not me\n";
 
 state_t state = active;
 
-uint16_t dev_discriptors[4];
+uint8_t mac[6];
+uint64_t my_id;
 
 // Prototypes
 void data_recieved_event(com_data_t* recieve_data, com_src_t src);
@@ -53,10 +54,22 @@ void main(void) {
 //    WDTCTL = WDTPW | WDTHOLD;
 //    WDTCTL = WDTPW | WDTHOLD;
 
-    dev_discriptors[0] = *((uint16*)0x1A0B);
-    dev_discriptors[1] = *((uint16*)0x1A0D);
-    dev_discriptors[2] = *((uint16*)0x1A0F);
-    dev_discriptors[3] = *((uint16*)0x1A11);
+    mac[0] = *(uint8_t*)0x1A0E;
+    mac[1] = *(uint8_t*)0x1A10;
+    mac[2] = *(uint8_t*)0x1A0A;
+    mac[3] = *(uint8_t*)0x1A0B;
+    mac[4] = *(uint8_t*)0x1A0C;
+    mac[5] = *(uint8_t*)0x1A0D;
+
+    my_id |= (uint64_t)mac[0];
+    my_id |= (uint64_t)mac[1] << 8;
+    my_id |= (uint64_t)mac[2] << 16;
+    my_id |= (uint64_t)mac[3] << 24;
+    my_id |= (uint64_t)mac[4] << 32;
+
+    send_data.command = WEIGHT;
+    send_data.id = my_id;
+    send_data.arg = 0.0;
 
 
     ui_init(button1_pressed_event, button2_pressed_event);
@@ -96,7 +109,7 @@ void data_recieved_event (com_data_t* receive_data, com_src_t src) {
 		switch(src){
 		case SRC_RF:
 			if(receive_data->command == PAGE){
-				if(receive_data->id == MY_BOX_ID)
+				if(receive_data->id == my_id)
 					ui_marker_on();
 			}
 			else if(receive_data->command == WEIGHT)

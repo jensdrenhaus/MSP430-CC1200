@@ -31,7 +31,7 @@ static float CALIBRATION_LOAD_VALUE   =  2921.0;
 
 //#############################################################################
 // private function prototypes
-static uint16 calculate_weight(uint16 ADC_val);
+static uint16_t calculate_weight(uint16_t ADC_val);
 
 
 //#############################################################################
@@ -84,9 +84,9 @@ void scale_init(){
 //!  PUBLIC sen_request()
 //!
 ////////////////////////////////////////////////////////////////////////////
-uint16 scale_request() {
-	uint8 i;
-	uint32 val = 0;
+uint16_t scale_request() {
+	uint8_t i;
+	uint32_t val = 0;
 	float weight = 0;
 
 //	ADC12CTL0 |=  ADC12SC;        // Start sampling/conversion
@@ -100,7 +100,7 @@ uint16 scale_request() {
 	}
 	val /= (i+1);
 	weight = calculate_weight(val);
-	//serial_debug_word((uint16)val);
+	//serial_debug_word((uint16_t)val);
 
 	return weight;
 }
@@ -111,7 +111,7 @@ uint16 scale_request() {
 //!  PUBLIC
 //!
 ////////////////////////////////////////////////////////////////////////////
-void scale_set_zero_offset(uint16 val){
+void scale_set_zero_offset(uint16_t val){
 	ZERO_OFFSET = (float)val;
 }
 
@@ -121,7 +121,7 @@ void scale_set_zero_offset(uint16 val){
 //!  PUBLIC
 //!
 ////////////////////////////////////////////////////////////////////////////
-void scale_set_calib_load_value(uint16 val){
+void scale_set_calib_load_value(uint16_t val){
 	CALIBRATION_LOAD_VALUE = (float)val;
 }
 
@@ -130,9 +130,9 @@ void scale_set_calib_load_value(uint16 val){
 //!  PRIVATE converter()
 //!
 ////////////////////////////////////////////////////////////////////////////
-uint16 scale_get_adc() {
-	uint8 i;
-	uint32 val = 0;
+uint16_t scale_get_adc() {
+	uint8_t i;
+	uint32_t val = 0;
 	for(i=0; i<100; i++){
 		ADC12CTL0 |=  ADC12SC;        // Start sampling/conversion
 		while(!(ADC12IFGR0 & ADC12IFG0));
@@ -143,13 +143,13 @@ uint16 scale_get_adc() {
 }
 
 
-uint16 calculate_weight(uint16 ADC_val){
+uint16_t calculate_weight(uint16_t ADC_val){
 
 	float weight = 0;
 	weight = ADC_val - ZERO_OFFSET;
 	weight = weight * gramms_per_value;
 
-	return (uint16)weight;
+	return (uint16_t)weight;
 
 }
 
