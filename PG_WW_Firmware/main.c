@@ -201,6 +201,7 @@ __interrupt void Timer1_A0(void)
 			scale_set_calib_load_value(calib_val/12);
 			state = active;
 			ui_red_off();
+			ui_marker_off();
 			calib_cnt = 0;
 			calib_val = 0;
 		}

@@ -63,7 +63,7 @@ void com_init(COM_CB callback) {
 void com_send(com_data_t* data, com_dest_t dest) {
 	switch (data->command){
 	case PAGE:
-		sprintf(send_str, "PAGE %lld\n", data->id);
+		sprintf(send_str, "PAGE %lld \n", data->id);
 		break;
 	case WEIGHT:
 		sprintf(send_str, "WEIGHT %lld %.3f \n", data->id, data->arg);
