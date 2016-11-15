@@ -174,7 +174,7 @@ __interrupt void Timer1_A0(void)
 			}
 		}
 		tick ^= 1;                   // toggel tick state
-		ui_tick();					 // blik red led to show programm is ok and working
+ 		ui_tick();					 // blik red led to show programm is ok and working
 		break;
 	case calibrating_zero:
 		ui_red_on();
