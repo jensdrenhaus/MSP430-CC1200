@@ -17,7 +17,7 @@
 //#############################################################################
 // globals
 
-static float CALIBRATION_LOAD_WEIGHT  =  2009.0;  // 2 Liter Wasserflasche
+static float CALIBRATION_LOAD_WEIGHT  =  2007.0;  // 2 Liter Wasserflasche
 static float gramms_per_value;
 
 #pragma PERSISTENT(ZERO_OFFSET)
@@ -123,6 +123,7 @@ void scale_set_zero_offset(uint16_t val){
 ////////////////////////////////////////////////////////////////////////////
 void scale_set_calib_load_value(uint16_t val){
 	CALIBRATION_LOAD_VALUE = (float)val;
+	gramms_per_value = CALIBRATION_LOAD_WEIGHT / (CALIBRATION_LOAD_VALUE - ZERO_OFFSET);
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -146,7 +147,10 @@ uint16_t scale_get_adc() {
 uint16_t calculate_weight(uint16_t ADC_val){
 
 	float weight = 0;
-	weight = ADC_val - ZERO_OFFSET;
+	if(ADC_val <= ZERO_OFFSET) // avoid negative values for weight
+		weight = 0;
+	else
+		weight = ADC_val - ZERO_OFFSET;
 	weight = weight * gramms_per_value;
 
 	return (uint16_t)weight;
