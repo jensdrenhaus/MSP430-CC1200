@@ -50,9 +50,10 @@ void button2_pressed_event();
 
 void main(void) {
 
-    WDTCTL = WDTPW | WDTHOLD;       // stop watchdog timer
-//    WDTCTL = WDTPW | WDTHOLD;
-//    WDTCTL = WDTPW | WDTHOLD;
+	// Set Watchdogtimer to 1 sek!
+    WDTCTL = WDTPW | WDTSSEL_1 | WDTCNTCL | WDTIS_4;
+
+
 
     mac[0] = *(uint8_t*)0x1A0E;
     mac[1] = *(uint8_t*)0x1A10;
@@ -151,6 +152,8 @@ void button2_pressed_event(){
 #pragma vector=TIMER1_A0_VECTOR
 __interrupt void Timer1_A0(void)
 {
+
+
 	static int tick      = 1;        // set state for full secound
 	static int send_cnt  = 0;
 	static int calib_cnt = 0;
@@ -207,6 +210,9 @@ __interrupt void Timer1_A0(void)
 		}
 		break;
 	}
+
+	WDTCTL = WDTPW | WDTSSEL_1 | WDTCNTCL | WDTIS_4; // reset WDT
+
 }
 
 
