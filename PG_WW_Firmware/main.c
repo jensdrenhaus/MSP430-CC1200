@@ -158,16 +158,20 @@ __interrupt void Timer1_A0(void)
 	static int send_cnt  = 0;
 	static int calib_cnt = 0;
 	static uint16 calib_val = 0;
+	static uint16 old_weight = 0;
+	static uint16 weight = 0;
 
 	switch(state){
 	case active:
 		if (tick){
-			//check sensor
-			//sen_request();
 
-			//Test analoge waage
-			uint16 weight = scale_request();
+			// analoge waage
+			weight = scale_request();
 			send_data.arg = (double)weight;
+			int16 dif = weight - old_weight;
+			if (abs(dif) >=  9)    // reset Paging LED
+				ui_marker_off();
+			old_weight = weight;
 
 
 			send_cnt++;
