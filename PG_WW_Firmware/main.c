@@ -175,7 +175,7 @@ __interrupt void Timer1_A0(void)
 
 
 			send_cnt++;
-			if(send_cnt == 4){
+			if(send_cnt == 3){
 				com_send(&send_data, DEST_RF);
 				send_cnt = 0;
 			}
