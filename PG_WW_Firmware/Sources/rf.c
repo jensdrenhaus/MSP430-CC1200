@@ -24,9 +24,9 @@
 static RF_CB  g_callback;
 static uint32 packetCounter = 0;
 // Initialize packet buffers of size RF_PKTLEN + 1
-static uint8 txBuffer[RF_PKTLEN+1] = {0};
-static uint8 rxBuffer[RF_PKTLEN+1] = {0};
-static char buf [RF_PKTLEN+1];
+static uint8 txBuffer[RF_PKTLEN+1] = {0}; // legth byte
+static uint8 rxBuffer[RF_PKTLEN+3] = {0}; // legth byte + 2 status bytes at the end
+static char buf [RF_PKTLEN+1];            // legth byte
 
 //#############################################################################
 // private function prototypes
@@ -260,12 +260,15 @@ __interrupt void Port_3(void)
     P3IE &= ~BIT5;                  // Disable Interrupt on P3.5
 
     read_rx_fifo(rxBuffer, sizeof(rxBuffer));
-    uint8 n = 0;
-    do{
-    	buf[n] = rxBuffer[n+1];
-    	n++;
-    } while (rxBuffer[n+1] != '\n');
-    g_callback(buf, SRC_RF);
+
+    if (rxBuffer[37] & 0b10000000) {           // chech CRC
+    	uint8 n = 0;
+    	    do{
+    	    	buf[n] = rxBuffer[n+1];
+    	    	n++;
+    	    } while (rxBuffer[n+1] != '\n');
+    	    g_callback(buf, SRC_RF);
+    }
     spi_cmd_strobe(RF_SFRX);
     spi_cmd_strobe(RF_SNOP);
     spi_cmd_strobe(RF_SRX);
