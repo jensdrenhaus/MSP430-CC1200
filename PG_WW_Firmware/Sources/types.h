@@ -1,3 +1,7 @@
+
+#ifndef _TYPES_H_
+#define _TYPES_H_
+
 #include <stdint.h>
 
 typedef int8_t int8;
@@ -11,3 +15,8 @@ typedef uint32_t uint32;
 
 typedef int64_t int64;
 typedef uint64_t uint64;
+
+
+
+
+#endif // _TYPES_H_
