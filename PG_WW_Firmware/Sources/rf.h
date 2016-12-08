@@ -155,8 +155,8 @@
 #define RF_AGC_GAIN2                0x2F7A
 #define RF_AGC_GAIN1                0x2F7B
 #define RF_AGC_GAIN0                0x2F7C
-#define RF_CFM_RX_DATA_OUT         0x2F7D
-#define RF_CFM_TX_DATA_IN          0x2F7E
+#define RF_CFM_RX_DATA_OUT          0x2F7D
+#define RF_CFM_TX_DATA_IN           0x2F7E
 #define RF_ASK_SOFT_RX_DATA         0x2F7F
 #define RF_RNDGEN                   0x2F80
 #define RF_MAGN2                    0x2F81
@@ -213,41 +213,41 @@
 /* AES Workspace */
 /* AES Key */
 #define RF_AES_KEY                  0x2FE0     /*  AES_KEY    - Address for AES key input  */
-#define RF_AES_KEY15	        0x2FE0
-#define RF_AES_KEY14	        0x2FE1
-#define RF_AES_KEY13	        0x2FE2
-#define RF_AES_KEY12	        0x2FE3
-#define RF_AES_KEY11	        0x2FE4
-#define RF_AES_KEY10	        0x2FE5
+#define RF_AES_KEY15	        	0x2FE0
+#define RF_AES_KEY14	        	0x2FE1
+#define RF_AES_KEY13	        	0x2FE2
+#define RF_AES_KEY12	        	0x2FE3
+#define RF_AES_KEY11	        	0x2FE4
+#define RF_AES_KEY10	        	0x2FE5
 #define RF_AES_KEY9	                0x2FE6
 #define RF_AES_KEY8	                0x2FE7
 #define RF_AES_KEY7	                0x2FE8
 #define RF_AES_KEY6	                0x2FE9
-#define RF_AES_KEY5	                0x2FE10
-#define RF_AES_KEY4	                0x2FE11
-#define RF_AES_KEY3	                0x2FE12
-#define RF_AES_KEY2	                0x2FE13
-#define RF_AES_KEY1	                0x2FE14
-#define RF_AES_KEY0	                0x2FE15
+#define RF_AES_KEY5	                0x2FEA
+#define RF_AES_KEY4	                0x2FEB
+#define RF_AES_KEY3	                0x2FEC
+#define RF_AES_KEY2	                0x2FED
+#define RF_AES_KEY1	                0x2FEE
+#define RF_AES_KEY0	                0x2FEF
 
 /* AES Buffer */
 #define RF_AES_BUFFER               0x2FF0     /*  AES_BUFFER - Address for AES Buffer     */
-#define RF_AES_BUFFER15		0x2FF0
-#define RF_AES_BUFFER14		0x2FF1
-#define RF_AES_BUFFER13		0x2FF2
-#define RF_AES_BUFFER12		0x2FF3
-#define RF_AES_BUFFER11		0x2FF4
-#define RF_AES_BUFFER10		0x2FF5
-#define RF_AES_BUFFER9		0x2FF6
-#define RF_AES_BUFFER8		0x2FF7
-#define RF_AES_BUFFER7		0x2FF8
-#define RF_AES_BUFFER6		0x2FF9
-#define RF_AES_BUFFER5		0x2FF10
-#define RF_AES_BUFFER4		0x2FF11
-#define RF_AES_BUFFER3		0x2FF12
-#define RF_AES_BUFFER2		0x2FF13
-#define RF_AES_BUFFER1		0x2FF14
-#define RF_AES_BUFFER0		0x2FF15
+#define RF_AES_BUFFER15				0x2FF0
+#define RF_AES_BUFFER14				0x2FF1
+#define RF_AES_BUFFER13				0x2FF2
+#define RF_AES_BUFFER12				0x2FF3
+#define RF_AES_BUFFER11				0x2FF4
+#define RF_AES_BUFFER10				0x2FF5
+#define RF_AES_BUFFER9				0x2FF6
+#define RF_AES_BUFFER8				0x2FF7
+#define RF_AES_BUFFER7				0x2FF8
+#define RF_AES_BUFFER6				0x2FF9
+#define RF_AES_BUFFER5				0x2FFA
+#define RF_AES_BUFFER4				0x2FFB
+#define RF_AES_BUFFER3				0x2FFC
+#define RF_AES_BUFFER2				0x2FFD
+#define RF_AES_BUFFER1				0x2FFE
+#define RF_AES_BUFFER0				0x2FFF
 
 #define RF_LQI_CRC_OK_BM            0x80
 #define RF_LQI_EST_BM               0x7F
