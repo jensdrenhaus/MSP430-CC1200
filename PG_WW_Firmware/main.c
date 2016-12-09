@@ -1,59 +1,68 @@
-/*------------------------------------------------------------------------------
+/*-----------------------------------------------------------------------------
 | File: main.c
 |
 | Initializes all software modules.
-  Triggers periodic events by timer interrupt.
-  Implements callback functions for each module.
-
-  Current state:
-  	  communication via serial only!
-  	  -> responds to PAGE command with toggel Status LED
-  	  -> echos WEIGHT commands
-  	  -> sends dummy WEIGHT every 10 sec
+| Triggers periodic events by timer interrupt.
+| Implements callback functions for each module.
+|
+| Current state:
+|
+|
+|
+|
 |
 | Note: - uses Timer A1 of MSP430 to trigger periodic events
 |		- implements Timer A1 ISR
- -----------------------------------------------------------------------------*/
+ ----------------------------------------------------------------------------*/
 
 #include "msp430fr5969.h"
-#include "serial.h"
 #include "ui.h"
 #include "com.h"
-#include "sensor.h"
 #include "scale.h"
+#include "types.h"
 
 
-
-
-
+//#############################################################################
+// globals
+//#############################################################################
 typedef enum e_state{active, calibrating_zero, calibrating_load, waiting}state_t;
 
-// Globals
-int pressed = 0;
+state_t    state      = active;
+uint16     pressed    = 0;
 com_data_t send_data;
-char* error_msg_command = "No valid command recieved\n";
-char* error_msg_id      = "That's not me\n";
+uint8      mac[6];
+uint64     my_id;
 
-state_t state = active;
-
-uint8_t mac[6];
-uint64_t my_id;
-
-// Prototypes
+//#############################################################################
+// function prototypes
+//#############################################################################
 void data_recieved_event(com_data_t* recieve_data, com_src_t src);
 void weight_changed_event(int val);
 void button1_pressed_event();
 void button2_pressed_event();
 
 
-
-
+//#############################################################################
+// MAIN FUNCTION
+//#############################################################################
 void main(void) {
-
-	// Set Watchdogtimer to 1 sek!
+	//------------------------------------------
+	// set Watchdogtimer to 1 sek!
+	//------------------------------------------
     WDTCTL = WDTPW | WDTSSEL_1 | WDTCNTCL | WDTIS_4;
 
+    //------------------------------------------
+	// configure Timer A1 used for periodic events
+	//------------------------------------------
 
+	TA1CTL |= (TASSEL__SMCLK | MC__UP | ID__8);          // SMCLK/8 , UP mode
+	TA1CTL |= TACLR;                 // clear to acticate new clock settings
+	TA1CCR0 = 62500;                 // SMCLK/8/62500 = 2Hz => 0,5s
+	TA1CCTL0 |= CCIE;                // TACCR0 interrupt enabled
+
+	//------------------------------------------
+	// read out unique device ID
+	//------------------------------------------
 
     mac[0] = *(uint8_t*)0x1A0E;
     mac[1] = *(uint8_t*)0x1A10;
@@ -68,38 +77,32 @@ void main(void) {
     my_id |= (uint64_t)mac[3] << 24;
     my_id |= (uint64_t)mac[4] << 32;
 
+    //------------------------------------------
+	// init modules
+	//------------------------------------------
+
     send_data.command = WEIGHT;
     send_data.id = my_id;
     send_data.arg = 0.0;
 
-
     ui_init(button1_pressed_event, button2_pressed_event);
     com_init(data_recieved_event);
-    sen_init(weight_changed_event);
     scale_init();
 
 
-    _EINT();                        // global interrupt enable
+    _EINT();                         // global interrupt enable
+
+    //------------------------------------------
+	// MAIN LOOP
+	//------------------------------------------
 
      while(1)
     {
-
     	// do nothing
     	// wait for interrupts
-
-
-    	// spi test
-//    	uint8 addr = 0x01; // IOCFG2
-//    	uint8 data = 0x06; // some value
-//    	spi_reg_access(SPI_WRITE_SINGLE, addr, &data, 1);
-
-    	// test f�r softwaregruppe
-//    	com_send(&send_data);
-//    	send_data.id++;
-//    	if(send_data.id >10)
-//    		send_data.id = 1;
     }
 }
+
 
 //#############################################################################
 // callback funktions
@@ -165,11 +168,12 @@ __interrupt void Timer1_A0(void)
 	case active:
 		if (tick){
 
-			// analoge waage
+			// analoge scale
 			weight = scale_request();
 			send_data.arg = (double)weight;
 			int16 dif = weight - old_weight;
-			if (abs(dif) >=  9)    // reset Paging LED
+			// reset Paging LED
+			if (abs(dif) >=  9)
 				ui_marker_off();
 			old_weight = weight;
 
@@ -181,7 +185,7 @@ __interrupt void Timer1_A0(void)
 			}
 		}
 		tick ^= 1;                   // toggel tick state
- 		ui_tick();					 // blik red led to show programm is ok and working
+ 		ui_tick();					 // blink red led to show sw is working
 		break;
 	case calibrating_zero:
 		ui_red_on();

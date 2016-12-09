@@ -61,15 +61,6 @@ void ui_init(UI_CB callback1, UI_CB callback2){
 
 
 	//------------------------------------------
-	// Configure Timer A1 used for periodic actions
-	//------------------------------------------
-
-	TA1CTL |= (TASSEL__SMCLK | MC__UP | ID__8);          // SMCLK/8 , UP mode
-	TA1CTL |= TACLR;                 // clear to acticate new clock settings
-	TA1CCR0 = 62500;                 // SMCLK/8/62500 = 2Hz => 0,5s
-	TA1CCTL0 |= CCIE;                // TACCR0 interrupt enabled
-
-	//------------------------------------------
 	// Configure GPIO
 	//------------------------------------------
 

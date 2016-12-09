@@ -16,7 +16,7 @@
 
 //#############################################################################
 // globals
-
+//#############################################################################
 static float CALIBRATION_LOAD_WEIGHT  =  2007.0;  // 2 Liter Wasserflasche
 static float gramms_per_value;
 
@@ -31,6 +31,7 @@ static float CALIBRATION_LOAD_VALUE   =  2921.0;
 
 //#############################################################################
 // private function prototypes
+//#############################################################################
 static uint16_t calculate_weight(uint16_t ADC_val);
 
 

@@ -1,44 +1,44 @@
-/*------------------------------------------------------------------------------
-| File: com.c
+/*-----------------------------------------------------------------------------
+| File: com.h
 |
-| Implements funktionality for converting incoming byte data into textoriented
+| Implements funktionality for converting incoming byte data into
 | command structure and vice versa
 |
 | Note: -
- -----------------------------------------------------------------------------*/
+|------------------------------------------------------------------------------
+| Datatypes:
+|     com_command_t    -- used to store command key words
+|     com_src_t        -- used to store data source
+|     com_dest_t       -- used to store data destination
+|     com_data_t       -- used to store command-set
+|------------------------------------------------------------------------------
+| Functions:
+|     com_init  -- init subjacent modules, saves functionpointer for callback
+|     com_send  -- passes command-set to subjacent module
+ ----------------------------------------------------------------------------*/
 
 #include "com.h"
 #include "serial.h"
+#include "rf.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "types.h"
-#include <rf.h>
-// zum test
-#include "ui.h"
-
-
-
 
 //#############################################################################
 // globals
+//#############################################################################
 
-static COM_CB g_com_callback;
-static char send_str[SERIAL_MAX_BUF];
-
-com_data_t receive_data;
-
-
+static COM_CB   g_com_callback;
+static char     send_str[SERIAL_MAX_BUF];
+com_data_t      receive_data;
 
 
 //#############################################################################
 // private function prototypes
+//#############################################################################
 static void interpreter(char* string, com_src_t src);
 
-
-//#############################################################################
-// module methods implementation:
-//#############################################################################
 
 
 ////////////////////////////////////////////////////////////////////////////
@@ -67,8 +67,6 @@ void com_send(com_data_t* data, com_dest_t dest) {
 		break;
 	case WEIGHT:
 		sprintf(send_str, "WEIGHT %lld %.3f \n", data->id, data->arg);
-//		dtoa(tempstr, data->arg);
-//		strcat(send_str, tempstr);
 		break;
 	default:
 		strcpy(send_str, "ERROR\n");
@@ -104,7 +102,4 @@ static void interpreter(char* string, com_src_t src){
 
 	g_com_callback(&receive_data, src);
 }
-
-
-
 
