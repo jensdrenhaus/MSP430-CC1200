@@ -9,7 +9,10 @@
 |     -
 |-------------------------------------------------------------------------------
 | Functions:
-|     -
+|     spi_init           -- init MSP hardware module
+|     spi_reg_access     -- R/W single/burst access to CC1200 Reg Space
+|     spi_ext_reg_acces  -- R/W single/burst access to CC1200 Ext Reg Space
+|     spi_cmd_strobe     -- send command strobe
  -----------------------------------------------------------------------------*/
 
 
@@ -17,18 +20,14 @@
 #include "msp430fr5969.h"
 
 
-
 //#############################################################################
 // globals
+//#############################################################################
 
 
 //#############################################################################
 // private function prototypes
 static void data_transfer(uint8 header, uint8 *data, uint16 len);
-
-//#############################################################################
-// module methods implementation:
-//#############################################################################
 
 
 ////////////////////////////////////////////////////////////////////////////
@@ -38,8 +37,7 @@ static void data_transfer(uint8 header, uint8 *data, uint16 len);
 ////////////////////////////////////////////////////////////////////////////
 void spi_init(uint8 prescaler) {
 
-	//######## nur für eigene Platinenversion: resetline von CC1200 ist auf
-	// MSP P1.2 gelegt.
+	// reset pin of CC1200 is connected to MSP P1.2
 	P1DIR |= BIT2;
 	P1OUT |= BIT2; // set P1.2 HIGH -> cc1200 reset HIGH
 
@@ -57,18 +55,18 @@ void spi_init(uint8 prescaler) {
 	 *     1        1       ter
 	 */
 
-	// Set module function for STE, MISO, MOSI
+	// set module function for STE, MISO, MOSI
 	P1SEL1 |= ( BIT6 | BIT7);
 	P1SEL0 &= ~( BIT6 | BIT7);
-	// Set module function for SCLK
+	// set module function for SCLK
 	P2SEL1 |= BIT2;
 	P2SEL0 &= ~(BIT2);
-	// MOSI, STE, SCLK as OUTPUT
+	// set MOSI, STE, SCLK as OUTPUT
 	P1DIR |= BIT6 | BIT3;
 	P2DIR |= BIT2;
-	// MISO as INPUT
+	// set MISO as INPUT
 	P1DIR &= ~BIT7;
-	//Pull-UP on MISO
+	// set Pull-UP on MISO
 	P1REN |= BIT7;
 	P1OUT |= BIT7;
 
@@ -84,15 +82,15 @@ void spi_init(uint8 prescaler) {
 	 * Most sicnificant bit first             -> UCMSB     set
 	 * Clock polarity: inactive stae is low   -> UCCPL     clear
 	 * Clock phase: capture on first edge     -> UCCKPH    set
-	 * Clock source SMCLK                     -> UCSSEL_2  set
+	 * Clock source SMCLK 1MHz                -> UCSSEL_2  set
 	 */
 	UCB0CTLW0 &= ~(UC7BIT | UCCKPL);
 	UCB0CTLW0 |= UCSYNC | UCMODE_0 | UCMST | UCMSB | UCCKPH | UCSSEL_2;
 
-	UCB0BR0 = prescaler;
+	UCB0BR0 = prescaler;  // BitClk = ModuleClk(SMCLK = 1MHz) / prescaler
 
-	/* Release for operation */
-	  UCB0CTL1 &= ~UCSWRST;
+	// Release for operation
+	UCB0CTL1 &= ~UCSWRST;
 
 }
 
@@ -185,10 +183,10 @@ void data_transfer(uint8 header, uint8 *data, uint16 len){
 		}
 	}
 	else if((header&0b11000000) == SPI_READ_SINGLE){
-		UCB0IFG &= ~UCRXIFG; 		 // clear RX flag
-		UCB0TXBUF= 0x00;			 // send expected 0 Byte
-		while(!(UCB0IFG & UCRXIFG)); // wait for slave to answer
-		*data = UCB0RXBUF;			 // read RX buffer, RX flag is reset
+		UCB0IFG &= ~UCRXIFG; 		     // clear RX flag
+		UCB0TXBUF= 0x00;			     // send expected 0 Byte
+		while(!(UCB0IFG & UCRXIFG));     // wait for slave to answer
+		*data = UCB0RXBUF;			     // read RX buffer, RX flag is reset
 	}
 	else if((header&0b11000000) == SPI_WRITE_BURST){
 		for(i = 0; i < len; i++){
@@ -199,9 +197,9 @@ void data_transfer(uint8 header, uint8 *data, uint16 len){
 		}
 	}
 	else {
-		UCB0IFG &= ~UCRXIFG;         // clear RX flag
-		UCB0TXBUF= *data; 		     // write byte
-		while(!(UCB0IFG & UCRXIFG)); // wait for slave to answer
+		UCB0IFG &= ~UCRXIFG;             // clear RX flag
+		UCB0TXBUF= *data; 		         // write byte
+		while(!(UCB0IFG & UCRXIFG));     // wait for slave to answer
 	}
 
 }
