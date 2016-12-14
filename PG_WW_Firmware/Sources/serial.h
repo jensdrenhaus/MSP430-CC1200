@@ -12,7 +12,8 @@
 | Functions:
 |     serial_init       -- init UART hardware, saves functionpointer for callback
 |     serial_send       -- sends string via serial port
-|     USCIA0RX_ISR      -- ISR for incoming bytes
+|     serial_debug_byte -- can by used for sending debug info to terminal
+|     serial_debug_word -- can by used for sending debug info to terminal
  -----------------------------------------------------------------------------*/
 
 #ifndef _SERIAL_H_
@@ -60,7 +61,28 @@ extern void serial_init(SERIAL_CB callback);
  -----------------------------------------------------------------------------*/
 extern void serial_send(char *string);
 
+/*------------------------------------------------------------------------------
+| serial_debug_byte -- can by used for sending debug info to terminal
+|
+| Parameter:
+|     one byte of data
+|
+| Return:
+|     -
+|
+ -----------------------------------------------------------------------------*/
 extern void serial_debug_byte(uint8 byte);
+
+/*------------------------------------------------------------------------------
+| serial_debug_word -- can by used for sending debug info to terminal
+|
+| Parameter:
+|     two byte of data
+|
+| Return:
+|     -
+|
+ -----------------------------------------------------------------------------*/
 extern void serial_debug_word(uint16 byte);
 
 
