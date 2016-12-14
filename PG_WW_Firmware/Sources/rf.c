@@ -1,10 +1,22 @@
 /*------------------------------------------------------------------------------
-| File: rf.c
+| File: rf.h
 |
-| --
+| Implements functionality for initialise CC1200 as well as sending and
+| recieving using SPI module.
+| Defines Makros for CC1200 register names
+| Defines Packetlength
 |
-| Note: --
- -----------------------------------------------------------------------------*/
+| Note: - uses PORT 3.5 int. to process feedback from CC1200 in addition to SPI
+|       - implements PORT 3.5 pin ISR
+|------------------------------------------------------------------------------
+| Datatypes:
+|     rf_setting_t    -- used to store register address - content touple
+|     rf_status_t     -- used to store feedback from CC1200
+|------------------------------------------------------------------------------
+| Functions:
+|     rf_init  -- init subjacent modules, saves functionpointer for callback
+|     rf_send  -- sends data to CC1200 using SPI module
+ ----------------------------------------------------------------------------*/
 
 #include "rf.h"
 #include "spi.h"
@@ -14,34 +26,23 @@
 
 
 
-
-#define ISR_ACTION_REQUIRED 1
-#define ISR_IDLE            0
-
 //#############################################################################
 // globals
 
 static RF_CB  g_callback;
 static uint32 packetCounter = 0;
-// Initialize packet buffers of size RF_PKTLEN + 1
-static uint8 txBuffer[RF_PKTLEN+1] = {0}; // legth byte
-static uint8 rxBuffer[RF_PKTLEN+3] = {0}; // legth byte + 2 status bytes at the end
+// Initialize packet buffers of size RF_PKTLEN + additional information
+static uint8 txBuffer[RF_PKTLEN+1] = {0}; // + legth byte
+static uint8 rxBuffer[RF_PKTLEN+3] = {0}; // + legth byte + 2 status bytes
 static char buf [RF_PKTLEN+1];            // legth byte
 
 //#############################################################################
 // private function prototypes
-static rfStatus_t read_reg(uint16 addr, uint8 *data, uint8 len);
-static rfStatus_t write_reg(uint16 addr, uint8 *data, uint8 len);
-static rfStatus_t write_tx_fifo(uint8 *data, uint8 len);
-static rfStatus_t read_rx_fifo(uint8 *data, uint8 len);
-static rfStatus_t get_tx_status();
-static rfStatus_t get_rx_status();
-static void create_packet(uint8 txBuffer[]);
-
-
-//#############################################################################
-// module methods implementation:
-//#############################################################################
+static rf_status_t read_reg(uint16 addr, uint8 *data, uint8 len);
+static rf_status_t write_reg(uint16 addr, uint8 *data, uint8 len);
+static rf_status_t write_tx_fifo(uint8 *data, uint8 len);
+static rf_status_t read_rx_fifo(uint8 *data, uint8 len);
+static rf_status_t get_status();
 
 
 ////////////////////////////////////////////////////////////////////////////
@@ -56,7 +57,7 @@ void rf_init(RF_CB callback) {
 	// ------------------------------------
 	g_callback = callback;
 
-	rfStatus_t status;
+	rf_status_t status;
 
 	spi_init(8);                    // SMCLK(1MHz) / 8 = 125kH
 
@@ -73,14 +74,14 @@ void rf_init(RF_CB callback) {
 
 	// Write registers to radio
 	for(i = 0;
-	    i < (sizeof(preferredSettings)/sizeof(rfSetting_t)); i++) {
+	    i < (sizeof(preferredSettings)/sizeof(rf_setting_t)); i++) {
 	    writeByte = preferredSettings[i].data;
 	    status = write_reg(preferredSettings[i].addr, &writeByte, 1);
 	}
 
 	// Read registers
 	for(i = 0;
-		i < (sizeof(preferredSettings)/sizeof(rfSetting_t)); i++) {
+		i < (sizeof(preferredSettings)/sizeof(rf_setting_t)); i++) {
 		status = read_reg(preferredSettings[i].addr, &readByte, 1);
 	}
 
@@ -168,8 +169,12 @@ void rf_send(char* data) {
 	//spi_cmd_strobe(RF_SFTX);
 }
 
+////////////////////////////////////////////////////////////////////////////
 
-rfStatus_t read_reg(uint16 addr, uint8 *data, uint8 len){
+//!  PRIVATE read_reg()
+//!
+////////////////////////////////////////////////////////////////////////////
+rf_status_t read_reg(uint16 addr, uint8 *data, uint8 len){
 
 	uint8 tmp_ext  = (uint8)(addr>>8);
 	uint8 tmp_addr = (uint8)(addr & 0x00FF);
@@ -190,7 +195,13 @@ rfStatus_t read_reg(uint16 addr, uint8 *data, uint8 len){
 	return (status);
 }
 
-rfStatus_t write_reg(uint16 addr, uint8 *data, uint8 len){
+
+////////////////////////////////////////////////////////////////////////////
+
+//!  PRIVATE write_reg()
+//!
+////////////////////////////////////////////////////////////////////////////
+rf_status_t write_reg(uint16 addr, uint8 *data, uint8 len){
 
 	uint8 tmp_ext  = (uint8)(addr>>8);
 	uint8 tmp_addr = (uint8)(addr & 0x00FF);
@@ -211,57 +222,57 @@ rfStatus_t write_reg(uint16 addr, uint8 *data, uint8 len){
 	return (status);
 }
 
-static rfStatus_t write_tx_fifo(uint8 *data, uint8 len){
+////////////////////////////////////////////////////////////////////////////
+
+//!  PRIVATE write_tx_fifo()
+//!
+////////////////////////////////////////////////////////////////////////////
+static rf_status_t write_tx_fifo(uint8 *data, uint8 len){
 	uint8 status;
 	status = spi_reg_access(0x00,RF_BURST_TXFIFO, data, len);
 	return (status);
 }
 
-static rfStatus_t read_rx_fifo(uint8 *data, uint8 len){
+
+////////////////////////////////////////////////////////////////////////////
+
+//!  PRIVATE read_rx_fifo()
+//!
+////////////////////////////////////////////////////////////////////////////
+static rf_status_t read_rx_fifo(uint8 *data, uint8 len){
 	uint8 status;
 	status = spi_reg_access(0x00,RF_BURST_RXFIFO, data, len);
 	return (status);
 }
 
-static rfStatus_t get_tx_status(){
+////////////////////////////////////////////////////////////////////////////
+
+//!  PRIVATE get_tx_status()
+//!
+////////////////////////////////////////////////////////////////////////////
+static rf_status_t get_status(){
 	return(spi_cmd_strobe(RF_SNOP));
 }
 
-static rfStatus_t get_rx_status(){
-	return(spi_cmd_strobe(RF_SNOP | SPI_READ_SINGLE));
-}
-
-static void create_packet(uint8 txBuffer[]) {
-
-    txBuffer[0] = RF_PKTLEN;                           // Length byte
-    txBuffer[1] = (uint8) (packetCounter >> 8);     // MSB of packetCounter
-    txBuffer[2] = (uint8)  packetCounter;           // LSB of packetCounter
-
-    // Fill rest of buffer with random bytes
-    uint8 i;
-    for(i = 3; i < (RF_PKTLEN + 1); i++) {
-        txBuffer[i] = 0x11;
-    }
-}
 
 //#############################################################################
 // interrupt service routines:
 //#############################################################################
 
 
-//////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 
-// ??? ISR for RXTX
-
-//////////////////////////////////////////////////////////////////////////
+//!  PORT3.5 ISR for indicating 'TX complete' as well as 'new data arrived'
+//!
+////////////////////////////////////////////////////////////////////////////
 #pragma vector=PORT3_VECTOR
 __interrupt void Port_3(void)
 {
-    P3IE &= ~BIT5;                  // Disable Interrupt on P3.5
+    P3IE &= ~BIT5;                              // Disable Interrupt on P3.5
 
     read_rx_fifo(rxBuffer, sizeof(rxBuffer));
 
-    if (rxBuffer[37] & 0b10000000) {           // chech CRC
+    if (rxBuffer[37] & 0b10000000) {            // chech CRC
     	uint8 n = 0;
     	    do{
     	    	buf[n] = rxBuffer[n+1];
@@ -273,8 +284,8 @@ __interrupt void Port_3(void)
     spi_cmd_strobe(RF_SNOP);
     spi_cmd_strobe(RF_SRX);
 
-    P3IE  |= BIT5;                  // Enable Interrupt on P3.5
-    P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
+    P3IE  |= BIT5;                              // Enable Interrupt on P3.5
+    P3IFG &= ~BIT5;                             // clear P3.5 interrupt flag
 
 }
 

@@ -1,16 +1,22 @@
 /*------------------------------------------------------------------------------
 | File: rf.h
 |
-| --
+| Implements functionality for initialise CC1200 as well as sending and
+| recieving using SPI module.
+| Defines Makros for CC1200 register names
+| Defines Packetlength
 |
-| Note: --
-|-------------------------------------------------------------------------------
+| Note: - uses PORT 3.5 int. to process feedback from CC1200 in addition to SPI
+|       - implements PORT 3.5 pin ISR
+|------------------------------------------------------------------------------
 | Datatypes:
-|     -
-|-------------------------------------------------------------------------------
+|     rf_setting_t    -- used to store register address - content touple
+|     rf_status_t     -- used to store feedback from CC1200
+|------------------------------------------------------------------------------
 | Functions:
-|     --
- -----------------------------------------------------------------------------*/
+|     rf_init  -- init subjacent modules, saves functionpointer for callback
+|     rf_send  -- sends data to CC1200 using SPI module
+ ----------------------------------------------------------------------------*/
 
 #ifndef _RF_H_
 #define _RF_H_
@@ -18,7 +24,7 @@
 #include "types.h"
 #include "com.h"
 
-
+/* Configuration Registers */
 #define RF_IOCFG3                   0x0000
 #define RF_IOCFG2                   0x0001
 #define RF_IOCFG1                   0x0002
@@ -198,8 +204,8 @@
 #define RF_TXFIRST                  0x2FD3
 #define RF_RXLAST                   0x2FD4
 #define RF_TXLAST                   0x2FD5
-#define RF_NUM_TXBYTES              0x2FD6  /* Number of bytes in TXFIFO */
-#define RF_NUM_RXBYTES              0x2FD7  /* Number of bytes in RXFIFO */
+#define RF_NUM_TXBYTES              0x2FD6     /* Number of bytes in TXFIFO */
+#define RF_NUM_RXBYTES              0x2FD7     /* Number of bytes in RXFIFO */
 #define RF_FIFO_NUM_TXBYTES         0x2FD8
 #define RF_FIFO_NUM_RXBYTES         0x2FD9
 #define RF_RXFIFO_PRE_BUF           0x2FDA
@@ -284,26 +290,29 @@
 
 //#############################################################################
 // datatypes
+//#############################################################################
 
 typedef struct
 {
   uint16  addr;
   uint8   data;
-}rfSetting_t;
+}rf_setting_t;
 
-typedef uint8 rfStatus_t;
+typedef uint8 rf_status_t;
 
 
 
 //#############################################################################
 // callback function definition
+//#############################################################################
 typedef void (*RF_CB)(char* buf, com_src_t src);
 
 //#############################################################################
 // function prototypes
+//#############################################################################
 
 /*------------------------------------------------------------------------------
-| PHY_init       -- init UART hardware, saves functionpointer for callback
+| rf_init  -- init subjacent modules, saves functionpointer for callback
 |
 | Parameter:
 |     function ptr to callback
@@ -312,12 +321,23 @@ typedef void (*RF_CB)(char* buf, com_src_t src);
 |     -
 |
  -----------------------------------------------------------------------------*/
-extern void rf_init();
+extern void rf_init(RF_CB callback);
+
+/*------------------------------------------------------------------------------
+| rf_send  -- sends data to CC1200 using SPI module
+|
+| Parameter:
+|     ptr to data to by sent
+|
+| Return:
+|     -
+|
+ -----------------------------------------------------------------------------*/
 extern void rf_send(char* data);
 
 
 
-#endif // _PHY_H_
+#endif // _RF_H_
 
 
 
