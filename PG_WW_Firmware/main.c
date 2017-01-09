@@ -49,7 +49,7 @@ void main(void) {
 	//------------------------------------------
 	// set Watchdogtimer to 1 sek!
 	//------------------------------------------
-    WDTCTL = WDTPW | WDTSSEL_1 | WDTCNTCL | WDTIS_4;
+    //WDTCTL = WDTPW | WDTSSEL_1 | WDTCNTCL | WDTIS_4;
 
     //------------------------------------------
 	// configure Timer A1 used for periodic events
@@ -219,7 +219,7 @@ __interrupt void Timer1_A0(void)
 		break;
 	}
 
-	WDTCTL = WDTPW | WDTSSEL_1 | WDTCNTCL | WDTIS_4; // reset WDT
+	//WDTCTL = WDTPW | WDTSSEL_1 | WDTCNTCL | WDTIS_4; // reset WDT
 
 }
 

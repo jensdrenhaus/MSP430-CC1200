@@ -90,30 +90,26 @@ void ui_init(UI_CB callback1, UI_CB callback2){
 
 }
 
-void ui_tick(){
+inline void ui_tick(){
 	P4OUT ^= BIT6;				 // toggel red LED
 }
 
-void ui_toggle_status(){
-//	while(!(UCA0IFG&UCTXIFG));
-//	UCA0TXBUF = 0x0A;           // send NL
-//	while(!(UCA0IFG&UCTXIFG));
-//	UCA0TXBUF = 0x0D;           // send CR
+inline void ui_toggle_status(){
 	P1OUT ^= BIT0;              // toggle green LED
 }
 
-void ui_marker_on(){
+inline void ui_marker_on(){
 	P1OUT |= BIT0;              // set green LED
 }
-void ui_marker_off(){
+inline void ui_marker_off(){
 	P1OUT &= ~BIT0;             // reset green LED
 }
 
-void ui_red_on(){
+inline void ui_red_on(){
 	P4OUT |= BIT6;
 }
 
-void ui_red_off(){
+inline void ui_red_off(){
 	P4OUT &= ~BIT6;
 }
 
