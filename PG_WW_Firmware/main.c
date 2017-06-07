@@ -32,6 +32,7 @@ uint16     pressed    = 0;
 com_data_t send_data;
 uint8      mac[6];
 uint64     my_id;
+uint32     my_product = 1;
 
 //#############################################################################
 // function prototypes
@@ -113,8 +114,9 @@ void data_recieved_event (com_data_t* receive_data, com_src_t src) {
 		switch(src){
 		case SRC_RF:
 			if(receive_data->command == PAGE){
-				if(receive_data->id == my_id)
+				//if(receive_data->id == my_id)
 					ui_marker_on();
+				    com_send(&send_data, DEST_RF);
 			}
 			else if(receive_data->command == WEIGHT)
 				com_send(receive_data, DEST_SERIAL);
@@ -178,11 +180,11 @@ __interrupt void Timer1_A0(void)
 			old_weight = weight;
 
 
-			send_cnt++;
-			if(send_cnt == 3){
-				com_send(&send_data, DEST_RF);
-				send_cnt = 0;
-			}
+//			send_cnt++;
+//			if(send_cnt == 3){
+//				com_send(&send_data, DEST_RF);
+//				send_cnt = 0;
+//			}
 		}
 		tick ^= 1;                   // toggel tick state
  		ui_tick();					 // blink red led to show sw is working
