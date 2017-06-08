@@ -34,7 +34,8 @@ typedef enum e_commands {NONE = 0, PAGE = 1, WEIGHT = 2}com_command_t;
 /* structure to hold commands */
 typedef struct s_com_data {
 		com_command_t command;
-		uint64_t      id;
+		uint64_t      box_id;
+		uint64_t      product_id;
 		double	      arg;
 }com_data_t;
 

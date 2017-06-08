@@ -31,8 +31,8 @@ state_t    state      = active;
 uint16     pressed    = 0;
 com_data_t send_data;
 uint8      mac[6];
-uint64     my_id;
-uint32     my_product = 1;
+uint64     my_box_id;
+uint64     my_product_id = 1;
 
 //#############################################################################
 // function prototypes
@@ -72,18 +72,19 @@ void main(void) {
     mac[4] = *(uint8_t*)0x1A0C;
     mac[5] = *(uint8_t*)0x1A0D;
 
-    my_id |= (uint64_t)mac[0];
-    my_id |= (uint64_t)mac[1] << 8;
-    my_id |= (uint64_t)mac[2] << 16;
-    my_id |= (uint64_t)mac[3] << 24;
-    my_id |= (uint64_t)mac[4] << 32;
+    my_box_id |= (uint64_t)mac[0];
+    my_box_id |= (uint64_t)mac[1] << 8;
+    my_box_id |= (uint64_t)mac[2] << 16;
+    my_box_id |= (uint64_t)mac[3] << 24;
+    my_box_id |= (uint64_t)mac[4] << 32;
 
     //------------------------------------------
 	// init modules
 	//------------------------------------------
 
     send_data.command = WEIGHT;
-    send_data.id = my_id;
+    send_data.box_id = my_box_id;
+    send_data.product_id = my_product_id;
     send_data.arg = 0.0;
 
     ui_init(button1_pressed_event, button2_pressed_event);
