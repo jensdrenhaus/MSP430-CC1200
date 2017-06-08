@@ -159,14 +159,14 @@ void rf_send(char* data) {
 	while(!(P3IFG & BIT5));
 	status = spi_cmd_strobe(RF_SNOP);
 
+	//flush TX FIFO
+	spi_cmd_strobe(RF_SIDLE);
+	spi_cmd_strobe(RF_SFTX);
 
 	spi_cmd_strobe(RF_SRX);
 	P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
 	P3IE  |= BIT5;                  // Enable Interrupt on P3.5
 	P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
-
-	//flush tx fifo
-	//spi_cmd_strobe(RF_SFTX);
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -270,7 +270,8 @@ __interrupt void Port_3(void)
 {
     P3IE &= ~BIT5;                              // Disable Interrupt on P3.5
 
-    read_rx_fifo(rxBuffer, sizeof(rxBuffer));
+    uint8 status;
+    status = read_rx_fifo(rxBuffer, sizeof(rxBuffer));
 
     if (rxBuffer[37] & 0b10000000) {            // chech CRC
     	uint8 n = 0;
@@ -280,9 +281,11 @@ __interrupt void Port_3(void)
     	    } while (rxBuffer[n+1] != '\n');
     	    g_callback(buf, SRC_RF);
     }
-    spi_cmd_strobe(RF_SFRX);
-    spi_cmd_strobe(RF_SNOP);
-    spi_cmd_strobe(RF_SRX);
+    // flush RX-FIFO
+    status = spi_cmd_strobe(RF_SIDLE);
+    status = spi_cmd_strobe(RF_SFRX);
+
+    status = spi_cmd_strobe(RF_SRX);
 
     P3IE  |= BIT5;                              // Enable Interrupt on P3.5
     P3IFG &= ~BIT5;                             // clear P3.5 interrupt flag
