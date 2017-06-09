@@ -21,7 +21,7 @@ static const rf_setting_t preferredSettings[]=
   {RF_IOCFG3,              0x06},
   {RF_IOCFG2,              0x06},
   {RF_IOCFG1,              0x30},
-  {RF_IOCFG0,              0x3C},
+  {RF_IOCFG0,              0x06},
   {RF_SYNC3,               0x93},
   {RF_SYNC2,               0x0B},
   {RF_SYNC1,               0x51},
