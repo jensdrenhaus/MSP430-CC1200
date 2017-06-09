@@ -10,6 +10,8 @@
 
 #include <stdint.h>
 
+#define NULL 0
+
 typedef int8_t int8;
 typedef uint8_t uint8;
 

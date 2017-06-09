@@ -19,6 +19,7 @@
 #include "ui.h"
 #include "com.h"
 #include "scale.h"
+#include "queue.h"
 #include "types.h"
 
 
@@ -90,6 +91,7 @@ void main(void) {
     ui_init(button1_pressed_event, button2_pressed_event);
     com_init(data_recieved_event);
     scale_init();
+    queue_init();
 
 
     _EINT();                         // global interrupt enable
@@ -98,8 +100,13 @@ void main(void) {
 	// MAIN LOOP
 	//------------------------------------------
 
-     while(1)
+    while(1)
     {
+        while(!queue_isEmty()){
+            com_data_t* tmp = queue_first();
+            com_send(tmp, DEST_RF);
+            queue_delete();
+        }
     	// do nothing
     	// wait for interrupts
     }
@@ -115,9 +122,10 @@ void data_recieved_event (com_data_t* receive_data, com_src_t src) {
 		switch(src){
 		case SRC_RF:
 			if(receive_data->command == PAGE){
-				//if(receive_data->id == my_id)
+				if(receive_data->product_id == my_product_id){
 					ui_marker_on();
-				    com_send(&send_data, DEST_RF);
+				    queue_insert(&send_data);
+				}
 			}
 			else if(receive_data->command == WEIGHT)
 				com_send(receive_data, DEST_SERIAL);
