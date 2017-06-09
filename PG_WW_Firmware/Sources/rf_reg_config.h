@@ -42,7 +42,7 @@ static const rf_setting_t preferredSettings[]=
   {RF_SYMBOL_RATE0,        0x10},
   {RF_AGC_REF,             0x27},
   {RF_AGC_CS_THR,          0xEE},
-  {RF_AGC_GAIN_ADJUST,     0x00},
+  {RF_AGC_GAIN_ADJUST,     0x9D},
   {RF_AGC_CFG3,            0xB1},
   {RF_AGC_CFG2,            0x20},
   {RF_AGC_CFG1,            0x11},
