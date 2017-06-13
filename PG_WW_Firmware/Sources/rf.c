@@ -155,7 +155,9 @@ void rf_send(char* data) {
 
 	// ### TEST ###
 
+	uint8 rssi;
 	uint8 cca_state;
+	status = read_reg(RF_RSSI1, &rssi, 1);
 	status = read_reg(RF_MARC_STATUS0, &cca_state, 1);
 
 	// ### TEST ENDE ###
@@ -163,7 +165,7 @@ void rf_send(char* data) {
 	// Wait for interruptflag that packet has been sent.
 	// Assuming the CC1200-GPIO connected to P3.5 is
 	// set to GPIOx_CFG = 0x06 -> CC1200 PKT_SYNC_RXTX interrupt
-	while(!(P3IFG & BIT5));
+	//while(!(P3IFG & BIT5));
 	status = spi_cmd_strobe(RF_SNOP);
 
 	//flush TX FIFO
