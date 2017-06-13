@@ -19,9 +19,9 @@
 static const rf_setting_t preferredSettings[]=
 {
   {RF_IOCFG3,              0x06},
-  {RF_IOCFG2,              0x06},
+  {RF_IOCFG2,              0x0F}, /* TXONCCA_DONE*/
   {RF_IOCFG1,              0x30},
-  {RF_IOCFG0,              0x06},
+  {RF_IOCFG0,              0x06}, /* PKT_SYNC_RXTX*/
   {RF_SYNC3,               0x93},
   {RF_SYNC2,               0x0B},
   {RF_SYNC1,               0x51},
@@ -41,12 +41,12 @@ static const rf_setting_t preferredSettings[]=
   {RF_SYMBOL_RATE1,        0x75},
   {RF_SYMBOL_RATE0,        0x10},
   {RF_AGC_REF,             0x27},
-  {RF_AGC_CS_THR,          0xEE},
+  {RF_AGC_CS_THR,          0xEE}, /* 0xEE (-18dBm) -> 0xAE (-82dBm)*/
   {RF_AGC_GAIN_ADJUST,     0x9D},
   {RF_AGC_CFG3,            0xB1},
   {RF_AGC_CFG2,            0x20},
   {RF_AGC_CFG1,            0x11},
-  {RF_AGC_CFG0,            0x94},
+  {RF_AGC_CFG0,            0x98}, /* 0x94 -> 0x98 RSSI_VALID_CNT = 5*/
   {RF_FIFO_CFG,            0x00},
   {RF_DEV_ADDR,            0x00},
   {RF_SETTLING_CFG,        0x0B},
@@ -56,7 +56,7 @@ static const rf_setting_t preferredSettings[]=
   {RF_WOR_EVENT0_MSB,      0x00},
   {RF_WOR_EVENT0_LSB,      0x00},
   {RF_RXDCM_TIME,          0x00},
-  {RF_PKT_CFG2,            0x00},
+  {RF_PKT_CFG2,            0x04}, // XXX /* CCA_MODE = 001 (RSSI below threshold)*/ /* CCA_MODE = 011 (not receiving & RSSI below threshold)*/
   {RF_PKT_CFG1,            0x03},
   {RF_PKT_CFG0,            0x20},
   {RF_RFEND_CFG1,          0x0F},

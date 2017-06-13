@@ -151,7 +151,14 @@ void rf_send(char* data) {
 	status = write_tx_fifo(txBuffer, sizeof(txBuffer));
 
 	// Strobe TX to send packet
-	spi_cmd_strobe(RF_STX);
+	status = spi_cmd_strobe(RF_STX);
+
+	// ### TEST ###
+
+	uint8 cca_state;
+	status = read_reg(RF_MARC_STATUS0, &cca_state, 1);
+
+	// ### TEST ENDE ###
 
 	// Wait for interruptflag that packet has been sent.
 	// Assuming the CC1200-GPIO connected to P3.5 is
