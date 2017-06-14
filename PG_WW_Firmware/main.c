@@ -126,6 +126,8 @@ void data_recieved_event (com_data_t* receive_data, com_src_t src) {
 				if(receive_data->product_id == my_product_id){
 					ui_marker_on();
 				    queue_insert(&send_data);
+//					com_send(&send_data, DEST_RF);
+//					ui_marker_off();
 				}
 			}
 			else if(receive_data->command == WEIGHT)

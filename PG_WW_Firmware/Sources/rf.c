@@ -73,7 +73,7 @@ void rf_init(RF_CB callback) {
 
     TA3CTL |= (TASSEL__SMCLK | MC__UP | ID__8);          // SMCLK/8 , UP mode
     TA3CTL |= TACLR;                 // clear to acticate new clock settings
-    TA3CCR0 = 62500;                 // SMCLK/8/62500 = 2Hz => 0,5s
+    TA3CCR0 = 62500;               // SMCLK/8/62500 = 2Hz => 0,5s
     TA3CCTL0 &= ~CCIE;               // TACCR3 interrupt disabled
 
     //------------------------------------------
@@ -179,35 +179,23 @@ void rf_send(char* data) {
 	status = write_tx_fifo(txBuffer, sizeof(txBuffer));
 
 	// enter CSMA
+	while(csma_state == BUSY){
 
-//	while(csma_state == BUSY){
-//	    // backoff
-//	    TA3CCTL0 |= CCIE;               // TACCR3 interrupt enabled
-//        TA3CTL |= TACLR;                // start Timer TA3
+	    // backoff
+//	    TA3CCR0 = 0;                    // stop timer
+//        TA3CCTL0 |= CCIE;               // TACCR3 interrupt enabled
+//        TA3CCR0 = 62500;                // start timer: SMCLK/8/62500 = 2Hz => 0,5s
 //        while(wait_for_backoff);
 //        TA3CCTL0 &= ~CCIE;              // TACCR3 interrupt disabled
-//	    // Strobe TX to send packet
-//        P3IFG &= ~BIT6;                 // clear P3.6 interrupt flag
-//        status = spi_cmd_strobe(RF_STX);
-//        //check CCA
-//        while(!(P3IFG & BIT6));
-//        P3IFG &= ~BIT6;                 // clear P3.6 interrupt flag
-//        status = read_reg(RF_MARC_STATUS0, &cca_state, 1);
-//        status = spi_cmd_strobe(RF_SRX);
-//        tx_on_cca_failed = (cca_state & 0b00000100);
-//        if(!tx_on_cca_failed){ // NOT TXONCCA_FAILED
-//            csma_state = SUCCESS;
-//        }
-//	}
-//	csma_state = BUSY;
+
+        // backoff
+        TA3CCR0 = 0;                    // stop timer
+        TA3CCTL0 &= ~CCIFG;             // clear TACCR3 interrupt flag
+        TA3CCR0 = 62500;                // start timer: SMCLK/8/62500 = 2Hz => 0,5s
+        while(!(TA3CCTL0 & CCIFG));     // wait for interrupt flag -> (ISR disabled)
+        TA3CCTL0 &= ~CCIFG;             // clear TACCR3 interrupt flag
 
 
-	while(csma_state == BUSY){
-	    // backoff
-        TA3CCTL0 |= CCIE;               // TACCR3 interrupt enabled
-        TA3CTL |= TACLR;                // start Timer TA3
-        while(wait_for_backoff);
-        TA3CCTL0 &= ~CCIE;              // TACCR3 interrupt disabled
 
         // ensure RX mode and CARRIER_SENSE_VALID
         writeByte = 0x10;                   // 16->CARRIER_SENSE_VALID
@@ -231,29 +219,23 @@ void rf_send(char* data) {
         //check CCA state
         status = read_reg(RF_MARC_STATUS0, &cca_state, 1);
         tx_on_cca_failed = (cca_state & 0b00000100);
-//        if(!tx_on_cca_failed){ // NOT TXONCCA_FAILED
-//            csma_state = SUCCESS;
-//        }
-
-        if(1){
+        if(!tx_on_cca_failed){ // NOT TXONCCA_FAILED
             csma_state = SUCCESS;
         }
 	}
 	csma_state = BUSY;
 
-	// ### TEST ENDE ###
-
 	// Wait for interruptflag that packet has been sent.
 	// Assuming the CC1200-GPIO connected to P3.5 is
 	// set to GPIOx_CFG = 0x06 -> CC1200 PKT_SYNC_RXTX interrupt
-	//while(!(P3IFG & BIT5));
+	while(!(P3IFG & BIT5));
 	status = spi_cmd_strobe(RF_SNOP);
 
 	//flush TX FIFO
-	spi_cmd_strobe(RF_SIDLE);
-	spi_cmd_strobe(RF_SFTX);
+	status = spi_cmd_strobe(RF_SIDLE);
+	status = spi_cmd_strobe(RF_SFTX);
 
-	spi_cmd_strobe(RF_SRX);
+	status = spi_cmd_strobe(RF_SRX);
 	P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
 	P3IE  |= BIT5;                  // Enable Interrupt on P3.5
 	P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
@@ -387,11 +369,11 @@ __interrupt void Port_3(void)
 //!  Timer A3 ISR for CSMA backoff
 //!
 ////////////////////////////////////////////////////////////////////////////
-#pragma vector=TIMER3_A0_VECTOR
-__interrupt void Timer3_A0(void)
-{
-    wait_for_backoff = 0;
-}
+//#pragma vector=TIMER3_A0_VECTOR
+//__interrupt void Timer3_A0(void)
+//{
+//    wait_for_backoff = 0;
+//}
 
 
 
