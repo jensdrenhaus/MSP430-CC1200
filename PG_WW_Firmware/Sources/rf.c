@@ -35,6 +35,9 @@ static uint32 packetCounter = 0;
 static uint8 txBuffer[RF_PKTLEN+1] = {0}; // + legth byte
 static uint8 rxBuffer[RF_PKTLEN+3] = {0}; // + legth byte + 2 status bytes
 static char buf [RF_PKTLEN+1];            // legth byte
+static uint16 wait_for_backoff;
+typedef enum e_csma_state {BUSY, SUCCESS}csma_state_t;
+csma_state_t csma_state;
 
 //#############################################################################
 // private function prototypes
@@ -58,8 +61,29 @@ void rf_init(RF_CB callback) {
 	g_callback = callback;
 
 	rf_status_t status;
+	wait_for_backoff = 1;
+	csma_state = BUSY;
 
 	spi_init(8);                    // SMCLK(1MHz) / 8 = 125kH
+
+	//------------------------------------------
+    // configure Timer A3 used for CSMA
+    //------------------------------------------
+
+    TA3CTL |= (TASSEL__SMCLK | MC__UP | ID__8);          // SMCLK/8 , UP mode
+    TA3CTL |= TACLR;                 // clear to acticate new clock settings
+    TA3CCR0 = 62500;                 // SMCLK/8/62500 = 2Hz => 0,5s
+    TA3CCTL0 &= ~CCIE;               // TACCR3 interrupt disabled
+
+    //------------------------------------------
+    // configure P3.6
+    //------------------------------------------
+    P3DIR &= ~BIT6;                 // Set P3.6 to input direction
+    P3REN |= BIT6;                  // Set P3.6 pullup/down Resistor
+    P3OUT &= ~BIT6;                 // Select P3.6 pull-down
+    P3IE  &= ~BIT6;                 // Disable Interrupt on P3.6
+    P3IES |= BIT6;                  // falling edge
+    P3IFG &= ~BIT6;                // clear P3.6 interrupt flag
 
 	// ------------------------------------
 	// CC1200 configuration
@@ -113,7 +137,9 @@ void rf_init(RF_CB callback) {
 ////////////////////////////////////////////////////////////////////////////
 void rf_send(char* data) {
 
-	uint8 status = 0;
+	uint8  status = 0;
+	uint8  cca_state;
+	uint16 tx_on_cca_failed;
 
 
 	// Configure GPIO Interrupt
@@ -150,15 +176,45 @@ void rf_send(char* data) {
 	// Write packet to TX FIFO
 	status = write_tx_fifo(txBuffer, sizeof(txBuffer));
 
+	// enter CSMA
+
+//	while(csma_state == BUSY){
+//	    // backoff
+//	    TA3CCTL0 |= CCIE;               // TACCR3 interrupt enabled
+//        TA3CTL |= TACLR;                // start Timer TA3
+//        while(wait_for_backoff);
+//        TA3CCTL0 &= ~CCIE;              // TACCR3 interrupt disabled
+//	    // Strobe TX to send packet
+//        P3IFG &= ~BIT6;                 // clear P3.6 interrupt flag
+//        status = spi_cmd_strobe(RF_STX);
+//        //check CCA
+//        while(!(P3IFG & BIT6));
+//        P3IFG &= ~BIT6;                 // clear P3.6 interrupt flag
+//        status = read_reg(RF_MARC_STATUS0, &cca_state, 1);
+//        status = spi_cmd_strobe(RF_SRX);
+//        tx_on_cca_failed = (cca_state & 0b00000100);
+//        if(!tx_on_cca_failed){ // NOT TXONCCA_FAILED
+//            csma_state = SUCCESS;
+//        }
+//	}
+//	csma_state = BUSY;
+
+
 	// Strobe TX to send packet
-	status = spi_cmd_strobe(RF_STX);
+	status = spi_cmd_strobe(RF_SRX);   // ensure RX to perform CCA
+	P3IFG &= ~BIT6;                    // clear P3.6 interrupt flag
+	status = spi_cmd_strobe(RF_STX);   // try to send
+	while(!(P3IFG & BIT6));            // wait for CCA entscheidung -> interrupt an P3.6 (ISR disabled)
+	P3IFG &= ~BIT6;                    // clear P3.6 interrupt flag
 
 	// ### TEST ###
 
 	uint8 rssi;
-	uint8 cca_state;
 	status = read_reg(RF_RSSI1, &rssi, 1);
+
+	//check CCA
 	status = read_reg(RF_MARC_STATUS0, &cca_state, 1);
+
 
 	// ### TEST ENDE ###
 
@@ -299,6 +355,17 @@ __interrupt void Port_3(void)
     P3IE  |= BIT5;                              // Enable Interrupt on P3.5
     P3IFG &= ~BIT5;                             // clear P3.5 interrupt flag
 
+}
+
+////////////////////////////////////////////////////////////////////////////
+
+//!  Timer A3 ISR for CSMA backoff
+//!
+////////////////////////////////////////////////////////////////////////////
+#pragma vector=TIMER3_A0_VECTOR
+__interrupt void Timer3_A0(void)
+{
+    wait_for_backoff = 0;
 }
 
 

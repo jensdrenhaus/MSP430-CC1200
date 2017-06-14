@@ -106,6 +106,7 @@ void main(void) {
             com_data_t* tmp = queue_first();
             com_send(tmp, DEST_RF);
             queue_delete();
+            ui_marker_off();
         }
     	// do nothing
     	// wait for interrupts
