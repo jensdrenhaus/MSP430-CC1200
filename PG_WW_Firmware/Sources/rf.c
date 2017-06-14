@@ -38,6 +38,7 @@ static char buf [RF_PKTLEN+1];            // legth byte
 static uint16 wait_for_backoff;
 typedef enum e_csma_state {BUSY, SUCCESS}csma_state_t;
 csma_state_t csma_state;
+static uint8 rssi;
 
 //#############################################################################
 // private function prototypes
@@ -140,6 +141,7 @@ void rf_send(char* data) {
 	uint8  status = 0;
 	uint8  cca_state;
 	uint16 tx_on_cca_failed;
+	uint8  writeByte;
 
 
 	// Configure GPIO Interrupt
@@ -200,21 +202,44 @@ void rf_send(char* data) {
 //	csma_state = BUSY;
 
 
-	// Strobe TX to send packet
-	status = spi_cmd_strobe(RF_SRX);   // ensure RX to perform CCA
-	P3IFG &= ~BIT6;                    // clear P3.6 interrupt flag
-	status = spi_cmd_strobe(RF_STX);   // try to send
-	while(!(P3IFG & BIT6));            // wait for CCA entscheidung -> interrupt an P3.6 (ISR disabled)
-	P3IFG &= ~BIT6;                    // clear P3.6 interrupt flag
+	while(csma_state == BUSY){
+	    // backoff
+        TA3CCTL0 |= CCIE;               // TACCR3 interrupt enabled
+        TA3CTL |= TACLR;                // start Timer TA3
+        while(wait_for_backoff);
+        TA3CCTL0 &= ~CCIE;              // TACCR3 interrupt disabled
 
-	// ### TEST ###
+        // ensure RX mode and CARRIER_SENSE_VALID
+        writeByte = 0x10;                   // 16->CARRIER_SENSE_VALID
+        status = write_reg(RF_IOCFG2, &writeByte, 1);
+        P3IFG &= ~BIT6;                    // clear P3.6 interrupt flag
+        status = spi_cmd_strobe(RF_SRX);   // ensure RX to perform CCA
+        while(!(P3IFG & BIT6));            // wait for CS to be valid -> interrupt an P3.6 (ISR disabled)
+        P3IFG &= ~BIT6;                    // clear P3.6 interrupt flag
 
-	uint8 rssi;
-	status = read_reg(RF_RSSI1, &rssi, 1);
+        // try to send
+        writeByte = 0x0F;                   // 15->TXONCCA_DONE
+        status = write_reg(RF_IOCFG2, &writeByte, 1);
+        P3IFG &= ~BIT6;                    // clear P3.6 interrupt flag
+        status = spi_cmd_strobe(RF_STX);   // try to send
+        while(!(P3IFG & BIT6));            // wait for CCA decision -> interrupt an P3.6 (ISR disabled)
+        P3IFG &= ~BIT6;                    // clear P3.6 interrupt flag
 
-	//check CCA
-	status = read_reg(RF_MARC_STATUS0, &cca_state, 1);
+        // for testing
+        status = read_reg(RF_RSSI1, &rssi, 1);
 
+        //check CCA state
+        status = read_reg(RF_MARC_STATUS0, &cca_state, 1);
+        tx_on_cca_failed = (cca_state & 0b00000100);
+//        if(!tx_on_cca_failed){ // NOT TXONCCA_FAILED
+//            csma_state = SUCCESS;
+//        }
+
+        if(1){
+            csma_state = SUCCESS;
+        }
+	}
+	csma_state = BUSY;
 
 	// ### TEST ENDE ###
 
