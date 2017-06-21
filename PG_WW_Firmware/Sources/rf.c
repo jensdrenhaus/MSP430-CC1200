@@ -6,7 +6,8 @@
 | Defines Makros for CC1200 register names
 | Defines Packetlength
 |
-| Note: - uses PORT 3.5 int. to process feedback from CC1200 in addition to SPI
+| Note: - uses PORT 3.5 int. an PORT 3.6 to process feedback from CC1200 in
+|         addition to SPI
 |       - implements PORT 3.5 pin ISR
 |------------------------------------------------------------------------------
 | Datatypes:
@@ -183,7 +184,14 @@ void rf_send(char* data) {
 	// enter CSMA
 	while(csma_state == BUSY){
 
+
 	    backoff = 4; // TODO random Nr.
+
+	    // put CC1200 into SLEEP while backoff
+//	    writeByte = 0x32;                  // 50->CHIP_RDYn, will go LOW after WAKEUP
+//	    status = write_reg(RF_IOCFG2, &writeByte, 1);
+	    status = spi_cmd_strobe(RF_SIDLE);
+	    status = spi_cmd_strobe(RF_SPWD);  // until CS goes LOW again
 
 	    // backoff // TODO non-blocking approach
 //	      TA3CCR0 = 0;                    // stop timer
@@ -203,11 +211,27 @@ void rf_send(char* data) {
             backoff --;
         }
 
+        //Wake Up
+        status = spi_cmd_strobe(RF_SIDLE); // wake up CC1200
+        status = spi_cmd_strobe(RF_SNOP);  // debugging
+//        // wait for MISO to go low
+//        while(P1IN & BIT7);
+
+        // DEBUGGING
+        // Write registers to radio
+        uint16 i;
+        for(i = 0;
+            i < (sizeof(preferredSettings)/sizeof(rf_setting_t)); i++) {
+            writeByte = preferredSettings[i].data;
+            status = write_reg(preferredSettings[i].addr, &writeByte, 1);
+        }
+
         // ensure RX mode and CARRIER_SENSE_VALID
         writeByte = 0x10;                  // 16->CARRIER_SENSE_VALID
         status = write_reg(RF_IOCFG2, &writeByte, 1);
         P3IFG &= ~BIT6;                    // clear P3.6 interrupt flag
         status = spi_cmd_strobe(RF_SRX);   // ensure RX to perform CCA
+        status = spi_cmd_strobe(RF_SNOP);  // debugging
         while(!(P3IFG & BIT6));            // wait for CS to be valid -> interrupt an P3.6 (ISR disabled)
         P3IFG &= ~BIT6;                    // clear P3.6 interrupt flag
 
