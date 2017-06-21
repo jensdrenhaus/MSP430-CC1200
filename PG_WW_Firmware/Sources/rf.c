@@ -73,7 +73,8 @@ void rf_init(RF_CB callback) {
 
     TA3CTL |= (TASSEL__SMCLK | MC__UP | ID__8);          // SMCLK/8 , UP mode
     TA3CTL |= TACLR;                 // clear to acticate new clock settings
-    TA3CCR0 = 62500;               // SMCLK/8/62500 = 2Hz => 0,5s
+    TA3CCR0 = 62500;                 // SMCLK/8/62500 = 2Hz => 0,5s
+    //TA3CCR0 = 125;                   // SMCLK/8/125 = 1kHz => 1ms
     TA3CCTL0 &= ~CCIE;               // TACCR3 interrupt disabled
 
     //------------------------------------------
@@ -142,6 +143,7 @@ void rf_send(char* data) {
 	uint8  cca_state;
 	uint16 tx_on_cca_failed;
 	uint8  writeByte;
+	uint16 backoff;
 
 
 	// Configure GPIO Interrupt
@@ -181,24 +183,28 @@ void rf_send(char* data) {
 	// enter CSMA
 	while(csma_state == BUSY){
 
-	    // backoff
-//	    TA3CCR0 = 0;                    // stop timer
+	    backoff = 4; // TODO random Nr.
+
+	    // backoff // TODO non-blocking approach
+//	      TA3CCR0 = 0;                    // stop timer
 //        TA3CCTL0 |= CCIE;               // TACCR3 interrupt enabled
 //        TA3CCR0 = 62500;                // start timer: SMCLK/8/62500 = 2Hz => 0,5s
 //        while(wait_for_backoff);
 //        TA3CCTL0 &= ~CCIE;              // TACCR3 interrupt disabled
 
-        // backoff
-        TA3CCR0 = 0;                    // stop timer
-        TA3CCTL0 &= ~CCIFG;             // clear TACCR3 interrupt flag
-        TA3CCR0 = 62500;                // start timer: SMCLK/8/62500 = 2Hz => 0,5s
-        while(!(TA3CCTL0 & CCIFG));     // wait for interrupt flag -> (ISR disabled)
-        TA3CCTL0 &= ~CCIFG;             // clear TACCR3 interrupt flag
-
-
+        // backoff (blocking)
+        TA3CCR0 = 0;                       // stop timer
+        TA3CTL |= TACLR;                   // clear count value
+        TA3CCTL0 &= ~CCIFG;                // clear TACCR3 interrupt flag
+        TA3CCR0 = 62500;                   // start timer: SMCLK/8/62500 = 2Hz => 0,5s
+        while(backoff != 0){               // wait for backoff counter
+            while(!(TA3CCTL0 & CCIFG));    // wait for interrupt flag -> (ISR disabled)
+            TA3CCTL0 &= ~CCIFG;            // clear TACCR3 interrupt flag
+            backoff --;
+        }
 
         // ensure RX mode and CARRIER_SENSE_VALID
-        writeByte = 0x10;                   // 16->CARRIER_SENSE_VALID
+        writeByte = 0x10;                  // 16->CARRIER_SENSE_VALID
         status = write_reg(RF_IOCFG2, &writeByte, 1);
         P3IFG &= ~BIT6;                    // clear P3.6 interrupt flag
         status = spi_cmd_strobe(RF_SRX);   // ensure RX to perform CCA
@@ -206,7 +212,7 @@ void rf_send(char* data) {
         P3IFG &= ~BIT6;                    // clear P3.6 interrupt flag
 
         // try to send
-        writeByte = 0x0F;                   // 15->TXONCCA_DONE
+        writeByte = 0x0F;                  // 15->TXONCCA_DONE
         status = write_reg(RF_IOCFG2, &writeByte, 1);
         P3IFG &= ~BIT6;                    // clear P3.6 interrupt flag
         status = spi_cmd_strobe(RF_STX);   // try to send
