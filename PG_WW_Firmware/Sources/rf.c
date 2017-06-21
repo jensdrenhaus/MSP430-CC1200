@@ -85,8 +85,8 @@ void rf_init(RF_CB callback) {
     P3REN |= BIT6;                  // Set P3.6 pullup/down Resistor
     P3OUT &= ~BIT6;                 // Select P3.6 pull-down
     P3IE  &= ~BIT6;                 // Disable Interrupt on P3.6
-    P3IES |= BIT6;                  // falling edge
-    P3IFG &= ~BIT6;                // clear P3.6 interrupt flag
+    P3IES &= ~BIT6;                 // rising edge
+    P3IFG &= ~BIT6;                 // clear P3.6 interrupt flag
 
 	// ------------------------------------
 	// CC1200 configuration
@@ -178,8 +178,6 @@ void rf_send(char* data) {
 		if (data[n-1] == '\0') break;
 	}
 
-	// Write packet to TX FIFO
-	status = write_tx_fifo(txBuffer, sizeof(txBuffer));
 
 	// enter CSMA
 	while(csma_state == BUSY){
@@ -188,8 +186,6 @@ void rf_send(char* data) {
 	    backoff = 4; // TODO random Nr.
 
 	    // put CC1200 into SLEEP while backoff
-//	    writeByte = 0x32;                  // 50->CHIP_RDYn, will go LOW after WAKEUP
-//	    status = write_reg(RF_IOCFG2, &writeByte, 1);
 	    status = spi_cmd_strobe(RF_SIDLE);
 	    status = spi_cmd_strobe(RF_SPWD);  // until CS goes LOW again
 
@@ -214,17 +210,7 @@ void rf_send(char* data) {
         //Wake Up
         status = spi_cmd_strobe(RF_SIDLE); // wake up CC1200
         status = spi_cmd_strobe(RF_SNOP);  // debugging
-//        // wait for MISO to go low
-//        while(P1IN & BIT7);
 
-        // DEBUGGING
-        // Write registers to radio
-        uint16 i;
-        for(i = 0;
-            i < (sizeof(preferredSettings)/sizeof(rf_setting_t)); i++) {
-            writeByte = preferredSettings[i].data;
-            status = write_reg(preferredSettings[i].addr, &writeByte, 1);
-        }
 
         // ensure RX mode and CARRIER_SENSE_VALID
         writeByte = 0x10;                  // 16->CARRIER_SENSE_VALID
@@ -234,6 +220,9 @@ void rf_send(char* data) {
         status = spi_cmd_strobe(RF_SNOP);  // debugging
         while(!(P3IFG & BIT6));            // wait for CS to be valid -> interrupt an P3.6 (ISR disabled)
         P3IFG &= ~BIT6;                    // clear P3.6 interrupt flag
+
+        // Write packet to TX FIFO
+        status = write_tx_fifo(txBuffer, sizeof(txBuffer));
 
         // try to send
         writeByte = 0x0F;                  // 15->TXONCCA_DONE
