@@ -74,8 +74,8 @@ void rf_init(RF_CB callback) {
 
     TA3CTL |= (TASSEL__SMCLK | MC__UP | ID__8);          // SMCLK/8 , UP mode
     TA3CTL |= TACLR;                 // clear to acticate new clock settings
-    TA3CCR0 = 62500;                 // SMCLK/8/62500 = 2Hz => 0,5s
-    //TA3CCR0 = 125;                   // SMCLK/8/125 = 1kHz => 1ms
+    //TA3CCR0 = 62500;                 // SMCLK/8/62500 = 2Hz => 0,5s
+    TA3CCR0 = 125;                   // SMCLK/8/125 = 1kHz => 1ms
     TA3CCTL0 &= ~CCIE;               // TACCR3 interrupt disabled
 
     //------------------------------------------
@@ -144,6 +144,7 @@ void rf_send(char* data) {
 	uint8  cca_state;
 	uint16 tx_on_cca_failed;
 	uint8  writeByte;
+	uint8  rnd;
 	uint16 backoff;
 
 
@@ -169,7 +170,6 @@ void rf_send(char* data) {
 
 	// copy data string into txBuffer
 	// add length byte
-
 	txBuffer[0] = RF_PKTLEN;
 	uint8 n = 1;
 	while(1) {
@@ -182,8 +182,10 @@ void rf_send(char* data) {
 	// enter CSMA
 	while(csma_state == BUSY){
 
-
-	    backoff = 4; // TODO random Nr.
+	    // choose random backoff
+	    status = spi_cmd_strobe(RF_SRX); // RX state for further randomized number
+	    status = read_reg(RF_RNDGEN, &rnd, 1);
+	    backoff = (uint16) (rnd & 0b0000000001111111); // use all 7 Bits -> 0 to 127
 
 	    // put CC1200 into SLEEP while backoff
 	    status = spi_cmd_strobe(RF_SIDLE);
@@ -200,7 +202,7 @@ void rf_send(char* data) {
         TA3CCR0 = 0;                       // stop timer
         TA3CTL |= TACLR;                   // clear count value
         TA3CCTL0 &= ~CCIFG;                // clear TACCR3 interrupt flag
-        TA3CCR0 = 62500;                   // start timer: SMCLK/8/62500 = 2Hz => 0,5s
+        TA3CCR0 = 125;                     // start timer SMCLK/8/125 = 1kHz => 1ms
         while(backoff != 0){               // wait for backoff counter
             while(!(TA3CCTL0 & CCIFG));    // wait for interrupt flag -> (ISR disabled)
             TA3CCTL0 &= ~CCIFG;            // clear TACCR3 interrupt flag
