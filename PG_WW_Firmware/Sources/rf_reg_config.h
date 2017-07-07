@@ -151,7 +151,7 @@ static const rf_setting_t preferredSettings[]=
   {RF_CFM_RX_DATA_OUT,     0x00},
   {RF_CFM_TX_DATA_IN,      0x00},
   {RF_ASK_SOFT_RX_DATA,    0x30},
-  {RF_RNDGEN,              0xFF}, // enable RNDGEN
+  {RF_RNDGEN,              0xFF}, // enable Rnd Num Gen NO RETENTION when going to sleep !!!
   {RF_MAGN2,               0x00},
   {RF_MAGN1,               0x00},
   {RF_MAGN0,               0x00},

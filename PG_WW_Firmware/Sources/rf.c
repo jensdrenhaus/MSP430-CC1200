@@ -6,9 +6,9 @@
 | Defines Makros for CC1200 register names
 | Defines Packetlength
 |
-| Note: - uses PORT 3.5 int. an PORT 3.6 to process feedback from CC1200 in
+| Note: - uses PORT 3.4 int. and PORT 3.5 to process feedback from CC1200 in
 |         addition to SPI
-|       - implements PORT 3.5 pin ISR
+|       - implements PORT 3.4 pin ISR
 |------------------------------------------------------------------------------
 | Datatypes:
 |     rf_setting_t    -- used to store register address - content touple
@@ -79,14 +79,14 @@ void rf_init(RF_CB callback) {
     TA3CCTL0 &= ~CCIE;               // TACCR3 interrupt disabled
 
     //------------------------------------------
-    // configure P3.6
+    // configure P3.5
     //------------------------------------------
-    P3DIR &= ~BIT6;                 // Set P3.6 to input direction
-    P3REN |= BIT6;                  // Set P3.6 pullup/down Resistor
-    P3OUT &= ~BIT6;                 // Select P3.6 pull-down
-    P3IE  &= ~BIT6;                 // Disable Interrupt on P3.6
-    P3IES &= ~BIT6;                 // rising edge
-    P3IFG &= ~BIT6;                 // clear P3.6 interrupt flag
+    P3DIR &= ~BIT5;                 // Set P3.5 to input direction
+    P3REN |= BIT5;                  // Set P3.5 pullup/down Resistor
+    P3OUT &= ~BIT5;                 // Select P3.5 pull-down
+    P3IE  &= ~BIT5;                 // Disable Interrupt on P3.5
+    P3IES &= ~BIT5;                 // rising edge
+    P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
 
 	// ------------------------------------
 	// CC1200 configuration
@@ -102,6 +102,9 @@ void rf_init(RF_CB callback) {
 	// Write registers to radio
 	for(i = 0;
 	    i < (sizeof(preferredSettings)/sizeof(rf_setting_t)); i++) {
+	    if(i == 45){
+	        uint8 temp = 0;
+	    }
 	    writeByte = preferredSettings[i].data;
 	    status = write_reg(preferredSettings[i].addr, &writeByte, 1);
 	}
@@ -115,21 +118,21 @@ void rf_init(RF_CB callback) {
 	// ------------------------------------
 	// register configuration for CC1200 GPIO
 	// ------------------------------------
-	// line connected to P3.5 looks like this:
+	// line connected to P3.4 looks like this:
 	//
 	//          start sending          sending complete
 	//               ___________________________
 	// _____________|                           |_________________
 	//
-	P3DIR &= ~BIT5;                 // Set P3.5 to input direction
-	P3REN |= BIT5;                  // Set P3.5 pullup/down Resistor
-	P3OUT &= ~BIT5;                 // Select P3.5 pull-down
-	P3IE  |= BIT5;                  // Enable Interrupt on P3.5
-	P3IES |= BIT5;                  // falling edge
-	P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
+	P3DIR &= ~BIT4;                 // Set P3.4 to input direction
+	P3REN |= BIT4;                  // Set P3.4 pullup/down Resistor
+	P3OUT &= ~BIT4;                 // Select P3.4 pull-down
+	P3IE  |= BIT4;                  // Enable Interrupt on P3.4
+	P3IES |= BIT4;                  // falling edge
+	P3IFG &= ~BIT4;                 // clear P3.4 interrupt flag
+
 
 	spi_cmd_strobe(RF_SRX);
-
 
 }
 
@@ -150,19 +153,19 @@ void rf_send(char* data) {
 
 	// Configure GPIO Interrupt
 	// no ISR no INT enable just set the right edge select
-	// for chekcing the ISR flag on P3.5 later for end of transmission.
-	// Line connected to P3.5 looks like this:
+	// for chekcing the ISR flag on P3.4 later for end of transmission.
+	// Line connected to P3.4 looks like this:
 	//
 	//          start sending          sending complete
 	//               ___________________________
 	// _____________|                           |_________________
 	//
-	P3DIR &= ~BIT5;                 // Set P3.5 to input direction
-	P3REN |= BIT5;                  // Set P3.5 pullup/down Resistor
-	P3OUT &= ~BIT5;                 // Select P3.5 pull-down
-	P3IE  &= ~BIT5;                 // Disable Interrupt on P3.5
-	P3IES |= BIT5;                  // falling edge
-	P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
+	P3DIR &= ~BIT4;                 // Set P3.4 to input direction
+	P3REN |= BIT4;                  // Set P3.4 pullup/down Resistor
+	P3OUT &= ~BIT4;                 // Select P3.4 pull-down
+	P3IE  &= ~BIT4;                 // Disable Interrupt on P3.4
+	P3IES |= BIT4;                  // falling edge
+	P3IFG &= ~BIT4;                 // clear P3.4 interrupt flag
 
 
 	// Update packet counter
@@ -202,7 +205,7 @@ void rf_send(char* data) {
         TA3CCR0 = 0;                       // stop timer
         TA3CTL |= TACLR;                   // clear count value
         TA3CCTL0 &= ~CCIFG;                // clear TACCR3 interrupt flag
-        TA3CCR0 = 125;                     // start timer SMCLK/8/125 = 1kHz => 1ms
+        TA3CCR0 = 1250;                     // start timer SMCLK/8/125 = 1kHz => 1ms
         while(backoff != 0){               // wait for backoff counter
             while(!(TA3CCTL0 & CCIFG));    // wait for interrupt flag -> (ISR disabled)
             TA3CCTL0 &= ~CCIFG;            // clear TACCR3 interrupt flag
@@ -212,16 +215,18 @@ void rf_send(char* data) {
         //Wake Up
         status = spi_cmd_strobe(RF_SIDLE); // wake up CC1200
         status = spi_cmd_strobe(RF_SNOP);  // debugging
+        writeByte = 0xFF;
+        status = write_reg(RF_RNDGEN, &writeByte, 1); // reactivate RNDGEN, no retentioni reg!
 
 
         // ensure RX mode and CARRIER_SENSE_VALID
         writeByte = 0x10;                  // 16->CARRIER_SENSE_VALID
         status = write_reg(RF_IOCFG2, &writeByte, 1);
-        P3IFG &= ~BIT6;                    // clear P3.6 interrupt flag
+        P3IFG &= ~BIT5;                    // clear P3.5 interrupt flag
         status = spi_cmd_strobe(RF_SRX);   // ensure RX to perform CCA
         status = spi_cmd_strobe(RF_SNOP);  // debugging
-        while(!(P3IFG & BIT6));            // wait for CS to be valid -> interrupt an P3.6 (ISR disabled)
-        P3IFG &= ~BIT6;                    // clear P3.6 interrupt flag
+        while(!(P3IFG & BIT5));            // wait for CS to be valid -> interrupt an P3.5 (ISR disabled)
+        P3IFG &= ~BIT5;                    // clear P3.5 interrupt flag
 
         // Write packet to TX FIFO
         status = write_tx_fifo(txBuffer, sizeof(txBuffer));
@@ -229,10 +234,10 @@ void rf_send(char* data) {
         // try to send
         writeByte = 0x0F;                  // 15->TXONCCA_DONE
         status = write_reg(RF_IOCFG2, &writeByte, 1);
-        P3IFG &= ~BIT6;                    // clear P3.6 interrupt flag
+        P3IFG &= ~BIT5;                    // clear P3.5 interrupt flag
         status = spi_cmd_strobe(RF_STX);   // try to send
-        while(!(P3IFG & BIT6));            // wait for CCA decision -> interrupt an P3.6 (ISR disabled)
-        P3IFG &= ~BIT6;                    // clear P3.6 interrupt flag
+        while(!(P3IFG & BIT5));            // wait for CCA decision -> interrupt an P3.5 (ISR disabled)
+        P3IFG &= ~BIT5;                    // clear P3.5 interrupt flag
 
         // for testing
         status = read_reg(RF_RSSI1, &rssi, 1);
@@ -247,9 +252,9 @@ void rf_send(char* data) {
 	csma_state = BUSY;
 
 	// Wait for interruptflag that packet has been sent.
-	// Assuming the CC1200-GPIO connected to P3.5 is
+	// Assuming the CC1200-GPIO connected to P3.4 is
 	// set to GPIOx_CFG = 0x06 -> CC1200 PKT_SYNC_RXTX interrupt
-	while(!(P3IFG & BIT5));
+	while(!(P3IFG & BIT4));
 	status = spi_cmd_strobe(RF_SNOP);
 
 	//flush TX FIFO
@@ -257,9 +262,9 @@ void rf_send(char* data) {
 	status = spi_cmd_strobe(RF_SFTX);
 
 	status = spi_cmd_strobe(RF_SRX);
-	P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
-	P3IE  |= BIT5;                  // Enable Interrupt on P3.5
-	P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
+	P3IFG &= ~BIT4;                 // clear P3.4 interrupt flag
+	P3IE  |= BIT4;                  // Enable Interrupt on P3.4
+	P3IFG &= ~BIT4;                 // clear P3.4 interrupt flag
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -355,13 +360,13 @@ static rf_status_t get_status(){
 
 ////////////////////////////////////////////////////////////////////////////
 
-//!  PORT3.5 ISR for indicating 'TX complete' as well as 'new data arrived'
+//!  PORT3.4 ISR for indicating 'TX complete' as well as 'new data arrived'
 //!
 ////////////////////////////////////////////////////////////////////////////
 #pragma vector=PORT3_VECTOR
 __interrupt void Port_3(void)
 {
-    P3IE &= ~BIT5;                              // Disable Interrupt on P3.5
+    P3IE &= ~BIT4;                              // Disable Interrupt on P3.4
 
     uint8 status;
     status = read_rx_fifo(rxBuffer, sizeof(rxBuffer));
@@ -380,8 +385,8 @@ __interrupt void Port_3(void)
 
     status = spi_cmd_strobe(RF_SRX);
 
-    P3IE  |= BIT5;                              // Enable Interrupt on P3.5
-    P3IFG &= ~BIT5;                             // clear P3.5 interrupt flag
+    P3IE  |= BIT4;                              // Enable Interrupt on P3.4
+    P3IFG &= ~BIT4;                             // clear P3.4 interrupt flag
 
 }
 
