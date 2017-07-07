@@ -87,7 +87,8 @@ void spi_init(uint8 prescaler) {
 	UCB0CTLW0 &= ~(UC7BIT | UCCKPL);
 	UCB0CTLW0 |= UCSYNC | UCMODE_0 | UCMST | UCMSB | UCCKPH | UCSSEL_2;
 
-	UCB0BR0 = prescaler;  // BitClk = ModuleClk(SMCLK = 1MHz) / prescaler
+	//UCB0BR0 = prescaler;  // BitClk = ModuleClk(SMCLK = 1MHz) / prescaler
+	UCB0BR0 = 0;            // no prescaler -> BitClk = Moduleclk(SMCLK = 1MHz)
 
 	// Release for operation
 	UCB0CTL1 &= ~UCSWRST;

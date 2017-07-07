@@ -66,7 +66,7 @@ void rf_init(RF_CB callback) {
 	wait_for_backoff = 1;
 	csma_state = BUSY;
 
-	spi_init(8);                    // SMCLK(1MHz) / 8 = 125kH
+	spi_init(8);                    // SMCLK(1MHz) / 8 = 125kH // !!! prescaler not used !!!
 
 	//------------------------------------------
     // configure Timer A3 used for CSMA
@@ -205,7 +205,7 @@ void rf_send(char* data) {
         TA3CCR0 = 0;                       // stop timer
         TA3CTL |= TACLR;                   // clear count value
         TA3CCTL0 &= ~CCIFG;                // clear TACCR3 interrupt flag
-        TA3CCR0 = 1250;                     // start timer SMCLK/8/125 = 1kHz => 1ms
+        TA3CCR0 = 125;                     // start timer SMCLK/8/125 = 1kHz => 1ms
         while(backoff != 0){               // wait for backoff counter
             while(!(TA3CCTL0 & CCIFG));    // wait for interrupt flag -> (ISR disabled)
             TA3CCTL0 &= ~CCIFG;            // clear TACCR3 interrupt flag
