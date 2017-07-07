@@ -16,6 +16,7 @@
 
 /* array to store elements */
 static com_data_t array[MAX];
+static com_data_fix_t array_fix[MAX];
 
 /* array pointer */
 static uint16 front;
@@ -45,6 +46,24 @@ void queue_init(){
 //!  PUBLIC queue_insert()
 //!
 ////////////////////////////////////////////////////////////////////////////
+queue_status_t queue_insert_fix(com_data_fix_t* element){
+    if(count == MAX)
+        return OVERFLOW;
+    else {
+        array_fix[rear].command    = element->command;
+        array_fix[rear].box_id     = element->box_id;
+        array_fix[rear].product_id = element->product_id;
+        array_fix[rear].arg        = element->arg;
+
+        rear++;
+        if(rear == MAX)
+            rear = 0;
+        count++;
+
+        return OK;
+    }
+}
+
 queue_status_t queue_insert(com_data_t* element){
     if(count == MAX)
         return OVERFLOW;
@@ -69,6 +88,13 @@ queue_status_t queue_insert(com_data_t* element){
 //!  PUBLIC queue_first()
 //!
 ////////////////////////////////////////////////////////////////////////////
+com_data_fix_t* queue_first_fix(){
+    if(count == 0)
+        return NULL;
+    else
+        return &array_fix[front];
+}
+
 com_data_t* queue_first(){
     if(count == 0)
         return NULL;

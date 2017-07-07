@@ -286,7 +286,7 @@
 
 
 
-#define RF_PKTLEN                   35 // 1 < PKTLEN < 126
+#define RF_PKTLEN                   (COM_FRAME_LEN) // 1 < PKTLEN < 126
 
 //#############################################################################
 // datatypes
@@ -305,7 +305,8 @@ typedef uint8 rf_status_t;
 //#############################################################################
 // callback function definition
 //#############################################################################
-typedef void (*RF_CB)(char* buf, com_src_t src);
+//typedef void (*RF_CB)(char* buf, com_src_t src);
+typedef void (*RF_CB)(uint8* buf_fix, com_src_t src);
 
 //#############################################################################
 // function prototypes
@@ -334,6 +335,7 @@ extern void rf_init(RF_CB callback);
 |
  -----------------------------------------------------------------------------*/
 extern void rf_send(char* data);
+extern void rf_send_fix(uint8* frame);
 
 
 

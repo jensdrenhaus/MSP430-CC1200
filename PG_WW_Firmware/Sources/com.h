@@ -1,3 +1,4 @@
+
 /*-----------------------------------------------------------------------------
 | File: com.h
 |
@@ -21,8 +22,12 @@
 #define _COM_H_
 
 #include <stdint.h>
+#include "types.h"
 
+#define COM_FRAME_LEN   19 // 1+8+8+2 Byte
 
+#define COM_PAGE_CMD    0x01
+#define COM_WEIGHT_CMD  0x02
 
 //#############################################################################
 // datatypes
@@ -39,13 +44,21 @@ typedef struct s_com_data {
 		double	      arg;
 }com_data_t;
 
+/* structure to hold commands */
+typedef struct s_com_data_fix {
+		uint8       command;
+		uint64      box_id;
+		uint64      product_id;
+		uint16      arg;
+}com_data_fix_t;
 
 
 
 //#############################################################################
 // callback function definition
 //#############################################################################
-typedef void (*COM_CB)(com_data_t* data, com_src_t src);
+//typedef void (*COM_CB)(com_data_t* data, com_src_t src);
+typedef void (*COM_CB)(com_data_fix_t* frame, com_src_t src);
 
 //#############################################################################
 // functions prototypes
@@ -74,6 +87,7 @@ extern void com_init(COM_CB callback);
 |
  -----------------------------------------------------------------------------*/
 extern void com_send(com_data_t* data, com_dest_t dest);
+extern void com_send_fix(com_data_fix_t* data, com_dest_t dest);
 
 
 

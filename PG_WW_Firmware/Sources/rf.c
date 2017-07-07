@@ -141,6 +141,128 @@ void rf_init(RF_CB callback) {
 //!  PUBLIC rf_send()
 //!
 ////////////////////////////////////////////////////////////////////////////
+void rf_send_fix(uint8* frame) {
+
+	uint8  status = 0;
+	uint8  cca_state;
+	uint16 tx_on_cca_failed;
+	uint8  writeByte;
+	uint8  rnd;
+	uint16 backoff;
+
+
+	// Configure GPIO Interrupt
+	// no ISR no INT enable just set the right edge select
+	// for chekcing the ISR flag on P3.4 later for end of transmission.
+	// Line connected to P3.4 looks like this:
+	//
+	//          start sending          sending complete
+	//               ___________________________
+	// _____________|                           |_________________
+	//
+	P3DIR &= ~BIT4;                 // Set P3.4 to input direction
+	P3REN |= BIT4;                  // Set P3.4 pullup/down Resistor
+	P3OUT &= ~BIT4;                 // Select P3.4 pull-down
+	P3IE  &= ~BIT4;                 // Disable Interrupt on P3.4
+	P3IES |= BIT4;                  // falling edge
+	P3IFG &= ~BIT4;                 // clear P3.4 interrupt flag
+
+
+	// copy data frame into txBuffer
+	// add length byte
+	txBuffer[0] = RF_PKTLEN;
+	uint16 i;
+	for(i=0; i<RF_PKTLEN; i++){
+		txBuffer[i+1] = frame[i];
+	}
+
+
+
+	// enter CSMA
+	while(csma_state == BUSY){
+
+	    // choose random backoff
+	    status = spi_cmd_strobe(RF_SRX); // RX state for further randomized number
+	    status = read_reg(RF_RNDGEN, &rnd, 1);
+	    backoff = (uint16) (rnd & 0b0000000001111111); // use all 7 Bits -> 0 to 127
+
+	    // put CC1200 into SLEEP while backoff
+	    status = spi_cmd_strobe(RF_SIDLE);
+	    status = spi_cmd_strobe(RF_SPWD);  // until CS goes LOW again
+
+	    // backoff // TODO non-blocking approach
+//	      TA3CCR0 = 0;                    // stop timer
+//        TA3CCTL0 |= CCIE;               // TACCR3 interrupt enabled
+//        TA3CCR0 = 62500;                // start timer: SMCLK/8/62500 = 2Hz => 0,5s
+//        while(wait_for_backoff);
+//        TA3CCTL0 &= ~CCIE;              // TACCR3 interrupt disabled
+
+        // backoff (blocking)
+        TA3CCR0 = 0;                       // stop timer
+        TA3CTL |= TACLR;                   // clear count value
+        TA3CCTL0 &= ~CCIFG;                // clear TACCR3 interrupt flag
+        TA3CCR0 = 125;                     // start timer SMCLK/8/125 = 1kHz => 1ms
+        while(backoff != 0){               // wait for backoff counter
+            while(!(TA3CCTL0 & CCIFG));    // wait for interrupt flag -> (ISR disabled)
+            TA3CCTL0 &= ~CCIFG;            // clear TACCR3 interrupt flag
+            backoff --;
+        }
+
+        //Wake Up
+        status = spi_cmd_strobe(RF_SIDLE); // wake up CC1200
+        status = spi_cmd_strobe(RF_SNOP);  // debugging
+        writeByte = 0xFF;
+        status = write_reg(RF_RNDGEN, &writeByte, 1); // reactivate RNDGEN, no retentioni reg!
+
+
+        // ensure RX mode and CARRIER_SENSE_VALID
+        writeByte = 0x10;                  // 16->CARRIER_SENSE_VALID
+        status = write_reg(RF_IOCFG2, &writeByte, 1);
+        P3IFG &= ~BIT5;                    // clear P3.5 interrupt flag
+        status = spi_cmd_strobe(RF_SRX);   // ensure RX to perform CCA
+        status = spi_cmd_strobe(RF_SNOP);  // debugging
+        while(!(P3IFG & BIT5));            // wait for CS to be valid -> interrupt an P3.5 (ISR disabled)
+        P3IFG &= ~BIT5;                    // clear P3.5 interrupt flag
+
+        // Write packet to TX FIFO
+        status = write_tx_fifo(txBuffer, sizeof(txBuffer));
+
+        // try to send
+        writeByte = 0x0F;                  // 15->TXONCCA_DONE
+        status = write_reg(RF_IOCFG2, &writeByte, 1);
+        P3IFG &= ~BIT5;                    // clear P3.5 interrupt flag
+        status = spi_cmd_strobe(RF_STX);   // try to send
+        while(!(P3IFG & BIT5));            // wait for CCA decision -> interrupt an P3.5 (ISR disabled)
+        P3IFG &= ~BIT5;                    // clear P3.5 interrupt flag
+
+        // for testing
+        status = read_reg(RF_RSSI1, &rssi, 1);
+
+        //check CCA state
+        status = read_reg(RF_MARC_STATUS0, &cca_state, 1);
+        tx_on_cca_failed = (cca_state & 0b00000100);
+        if(!tx_on_cca_failed){ // NOT TXONCCA_FAILED
+            csma_state = SUCCESS;
+        }
+	}
+	csma_state = BUSY;
+
+	// Wait for interruptflag that packet has been sent.
+	// Assuming the CC1200-GPIO connected to P3.4 is
+	// set to GPIOx_CFG = 0x06 -> CC1200 PKT_SYNC_RXTX interrupt
+	while(!(P3IFG & BIT4));
+	status = spi_cmd_strobe(RF_SNOP);
+
+	//flush TX FIFO
+	status = spi_cmd_strobe(RF_SIDLE);
+	status = spi_cmd_strobe(RF_SFTX);
+
+	status = spi_cmd_strobe(RF_SRX);
+	P3IFG &= ~BIT4;                 // clear P3.4 interrupt flag
+	P3IE  |= BIT4;                  // Enable Interrupt on P3.4
+	P3IFG &= ~BIT4;                 // clear P3.4 interrupt flag
+}
+
 void rf_send(char* data) {
 
 	uint8  status = 0;
@@ -366,27 +488,46 @@ static rf_status_t get_status(){
 #pragma vector=PORT3_VECTOR
 __interrupt void Port_3(void)
 {
-    P3IE &= ~BIT4;                              // Disable Interrupt on P3.4
+	// for fix packet length
+	P3IE &= ~BIT4;                              // Disable Interrupt on P3.4
 
-    uint8 status;
-    status = read_rx_fifo(rxBuffer, sizeof(rxBuffer));
+	uint8 status;
+	status = read_rx_fifo(rxBuffer, sizeof(rxBuffer));
 
-    if (rxBuffer[37] & 0b10000000) {            // chech CRC
-    	uint8 n = 0;
-    	    do{
-    	    	buf[n] = rxBuffer[n+1];
-    	    	n++;
-    	    } while (rxBuffer[n+1] != '\n');
-    	    g_callback(buf, SRC_RF);
-    }
-    // flush RX-FIFO
-    status = spi_cmd_strobe(RF_SIDLE);
-    status = spi_cmd_strobe(RF_SFRX);
+	if (rxBuffer[21] & 0b10000000) {            // chech CRC
+		g_callback((rxBuffer+1), SRC_RF);       // pointer of secound byte, skip length byte
+	}
+	// flush RX-FIFO
+	status = spi_cmd_strobe(RF_SIDLE);
+	status = spi_cmd_strobe(RF_SFRX);
 
-    status = spi_cmd_strobe(RF_SRX);
+	status = spi_cmd_strobe(RF_SRX);
 
-    P3IE  |= BIT4;                              // Enable Interrupt on P3.4
-    P3IFG &= ~BIT4;                             // clear P3.4 interrupt flag
+	P3IE  |= BIT4;                              // Enable Interrupt on P3.4
+	P3IFG &= ~BIT4;                             // clear P3.4 interrupt flag
+
+	// for old text based commands
+//    P3IE &= ~BIT4;                              // Disable Interrupt on P3.4
+//
+//    uint8 status;
+//    status = read_rx_fifo(rxBuffer, sizeof(rxBuffer));
+//
+//    if (rxBuffer[37] & 0b10000000) {            // chech CRC
+//    	uint8 n = 0;
+//    	    do{
+//    	    	buf[n] = rxBuffer[n+1];
+//    	    	n++;
+//    	    } while (rxBuffer[n+1] != '\n');
+//    	    g_callback(buf, SRC_RF);
+//    }
+//    // flush RX-FIFO
+//    status = spi_cmd_strobe(RF_SIDLE);
+//    status = spi_cmd_strobe(RF_SFRX);
+//
+//    status = spi_cmd_strobe(RF_SRX);
+//
+//    P3IE  |= BIT4;                              // Enable Interrupt on P3.4
+//    P3IFG &= ~BIT4;                             // clear P3.4 interrupt flag
 
 }
 

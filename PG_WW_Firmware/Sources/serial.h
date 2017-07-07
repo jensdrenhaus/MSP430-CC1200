@@ -23,6 +23,7 @@
 #include "types.h"
 
 #define SERIAL_MAX_BUF		50
+#define SERIAL_FIX_BUF          19
 
 
 //#############################################################################
@@ -32,7 +33,8 @@
 
 //#############################################################################
 // callback function definition
-typedef void (*SERIAL_CB)(char* string, com_src_t src);
+//typedef void (*SERIAL_CB)(char* string, com_src_t src);
+typedef void (*SERIAL_CB)(uint8* frame, com_src_t src);
 
 //#############################################################################
 // function prototypes
@@ -60,6 +62,7 @@ extern void serial_init(SERIAL_CB callback);
 |
  -----------------------------------------------------------------------------*/
 extern void serial_send(char *string);
+extern void serial_send_fix(uint8 *frame);
 
 /*------------------------------------------------------------------------------
 | serial_debug_byte -- can by used for sending debug info to terminal

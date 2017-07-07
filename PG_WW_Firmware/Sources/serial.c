@@ -18,6 +18,8 @@
 // globals
 
 static char      buf [SERIAL_MAX_BUF];
+static uint8     buf_fix [SERIAL_FIX_BUF];
+static uint16    rec_buf_cnt;
 static SERIAL_CB    g_callback;
 
 
@@ -57,7 +59,7 @@ void serial_init(SERIAL_CB callback) {
 	UCA0CTLW0 &= ~UCSWRST;          // Initialize eUSCI
 	UCA0IE |= UCRXIE;               // Enable RX Interrupt
 
-
+	rec_buf_cnt = 0;
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -65,6 +67,15 @@ void serial_init(SERIAL_CB callback) {
 //!  PUBLIC serial_send()
 //!
 ////////////////////////////////////////////////////////////////////////////
+void serial_send_fix(uint8 *frame) {
+	int i;
+	for(i=0; i<SERIAL_FIX_BUF; i++){
+		while(!(UCA0IFG&UCTXIFG));
+		UCA0TXBUF = frame[i];
+		i++;
+	}
+}
+
 void serial_send(char *string) {
 	int n = 0;
 	while(1) {
@@ -106,20 +117,39 @@ void serial_debug_word(uint16 word) {
 #pragma vector=USCI_A0_VECTOR
 __interrupt void USCIA0RX_ISR(void)
 {
+	// for fix packet length
 	switch(__even_in_range(UCA0IV, USCI_UART_UCTXCPTIFG)) // check UART IFGs
 	  {
-	    case USCI_NONE: break;
-	    case USCI_UART_UCRXIFG:
-	    	strcat(buf, (const char*)&UCA0RXBUF);
-			if(UCA0RXBUF == '\n'){
-				g_callback(buf, SRC_SERIAL);
-				strcpy(buf,"");
+		case USCI_NONE: break;
+		case USCI_UART_UCRXIFG:
+			buf_fix[rec_buf_cnt] = (uint8)UCA0RXBUF;
+			rec_buf_cnt++;
+			if(rec_buf_cnt == SERIAL_FIX_BUF){
+				g_callback(buf_fix, SRC_SERIAL);
+				rec_buf_cnt = 0;
 			}
-	        break;
-	    case USCI_UART_UCTXIFG: break;
-	    case USCI_UART_UCSTTIFG: break;
-	    case USCI_UART_UCTXCPTIFG: break;
+			break;
+		case USCI_UART_UCTXIFG: break;
+		case USCI_UART_UCSTTIFG: break;
+		case USCI_UART_UCTXCPTIFG: break;
 	  }
+
+
+	// for older text based commands
+//	switch(__even_in_range(UCA0IV, USCI_UART_UCTXCPTIFG)) // check UART IFGs
+//	  {
+//	    case USCI_NONE: break;
+//	    case USCI_UART_UCRXIFG:
+//	    	strcat(buf, (const char*)&UCA0RXBUF);
+//			if(UCA0RXBUF == '\n'){
+//				g_callback(buf, SRC_SERIAL);
+//				strcpy(buf,"");
+//			}
+//	        break;
+//	    case USCI_UART_UCTXIFG: break;
+//	    case USCI_UART_UCSTTIFG: break;
+//	    case USCI_UART_UCTXCPTIFG: break;
+//	  }
 
 }
 
