@@ -32,6 +32,7 @@ state_t        state      = active;
 uint16         pressed    = 0;
 com_data_t     send_data;
 com_data_fix_t send_data_fix;
+com_frame_t    send_frame;
 uint8          mac[6];
 uint64         my_box_id;
 uint64         my_product_id = 1;
@@ -40,7 +41,7 @@ uint64         my_product_id = 1;
 // function prototypes
 //#############################################################################
 void data_recieved_event(com_data_t* recieve_data, com_src_t src);
-void data_recieved_fix_event(com_data_fix_t* receive_frame, com_src_t src);
+void data_recieved_fix_event(com_frame_t* receive_frame, com_src_t src);
 void weight_changed_event(int val);
 void button1_pressed_event();
 void button2_pressed_event();
@@ -93,7 +94,12 @@ void main(void) {
     send_data_fix.command = COM_WEIGHT_CMD;
 	send_data_fix.box_id = my_box_id;
 	send_data_fix.product_id = my_product_id;
-	send_data_fix.arg = 0;
+	send_data_fix.arg = 33;
+
+	send_frame.frame.command = COM_WEIGHT_CMD;
+    send_frame.frame.box_id = my_box_id;
+    send_frame.frame.product_id = my_product_id;
+    send_frame.frame.arg = 33;
 
     ui_init(button1_pressed_event, button2_pressed_event);
     com_init(data_recieved_fix_event);
@@ -139,24 +145,24 @@ void main(void) {
 // callback funktions
 //#############################################################################
 
-void data_recieved_fix_event (com_data_fix_t* receive_frame, com_src_t src) {
+void data_recieved_fix_event (com_frame_t* receive_frame, com_src_t src) {
 	if(state == active){
 		switch(src){
 		case SRC_RF:
-			if(receive_frame->command == COM_PAGE_CMD){
-				if(receive_frame->product_id == my_product_id){
+			if(receive_frame->frame.command == COM_PAGE_CMD){
+				if(receive_frame->frame.product_id == my_product_id){
 					ui_marker_on();
-				    queue_insert(&send_data);
+				    queue_insert_fix(&send_frame);
 //					com_send(&send_data, DEST_RF);
 //					ui_marker_off();
 				}
 			}
-			else if(receive_frame->command == COM_WEIGHT_CMD)
+			else if(receive_frame->frame.command == COM_WEIGHT_CMD)
 				com_send_fix(receive_frame, DEST_SERIAL);
 			break;
 
 		case SRC_SERIAL:
-			if(receive_frame->command == COM_PAGE_CMD)
+			if(receive_frame->frame.command == COM_PAGE_CMD)
 				com_send_fix(receive_frame, DEST_RF);
 			break;
 

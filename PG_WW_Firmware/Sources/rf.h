@@ -286,17 +286,30 @@
 
 
 
-#define RF_PKTLEN                   (COM_FRAME_LEN) // 1 < PKTLEN < 126
+#define RF_PAYLOADLEN                   (COM_FRAME_LEN) // 1 < PKTLEN < 126
 
 //#############################################################################
 // datatypes
 //#############################################################################
 
-typedef struct
-{
+typedef struct s_rf_setting_t {
   uint16  addr;
   uint8   data;
 }rf_setting_t;
+
+typedef struct s_rf_data_fix{
+  uint8       length;
+  com_frame_t com_frame;
+  uint8       status1;
+  uint8       status2;
+}rf_data_fix_t;
+
+typedef union u_rf_frame{
+    uint8 array[RF_PAYLOADLEN+3];
+    rf_data_fix_t frame;
+}rf_frame_t;
+
+
 
 typedef uint8 rf_status_t;
 
@@ -306,7 +319,7 @@ typedef uint8 rf_status_t;
 // callback function definition
 //#############################################################################
 //typedef void (*RF_CB)(char* buf, com_src_t src);
-typedef void (*RF_CB)(uint8* buf_fix, com_src_t src);
+typedef void (*RF_CB)(com_frame_t* buf_fix, com_src_t src);
 
 //#############################################################################
 // function prototypes
@@ -335,7 +348,7 @@ extern void rf_init(RF_CB callback);
 |
  -----------------------------------------------------------------------------*/
 extern void rf_send(char* data);
-extern void rf_send_fix(uint8* frame);
+extern void rf_send_fix(com_frame_t* frame);
 
 
 

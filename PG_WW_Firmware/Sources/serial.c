@@ -17,9 +17,10 @@
 //#############################################################################
 // globals
 
-static char      buf [SERIAL_MAX_BUF];
-static uint8     buf_fix [SERIAL_FIX_BUF];
-static uint16    rec_buf_cnt;
+static char         buf [SERIAL_MAX_BUF];
+static uint8        buf_fix [SERIAL_FIX_BUF];
+static com_frame_t  buf_frame;
+static uint16       rec_buf_cnt;
 static SERIAL_CB    g_callback;
 
 
@@ -67,11 +68,11 @@ void serial_init(SERIAL_CB callback) {
 //!  PUBLIC serial_send()
 //!
 ////////////////////////////////////////////////////////////////////////////
-void serial_send_fix(uint8 *frame) {
+void serial_send_fix(com_frame_t *frame) {
 	int i;
 	for(i=0; i<SERIAL_FIX_BUF; i++){
 		while(!(UCA0IFG&UCTXIFG));
-		UCA0TXBUF = frame[i];
+		UCA0TXBUF = frame->array[i];
 		i++;
 	}
 }
@@ -122,10 +123,10 @@ __interrupt void USCIA0RX_ISR(void)
 	  {
 		case USCI_NONE: break;
 		case USCI_UART_UCRXIFG:
-			buf_fix[rec_buf_cnt] = (uint8)UCA0RXBUF;
+			buf_frame.array[rec_buf_cnt] = (uint8)UCA0RXBUF;
 			rec_buf_cnt++;
 			if(rec_buf_cnt == SERIAL_FIX_BUF){
-				g_callback(buf_fix, SRC_SERIAL);
+				g_callback(&buf_frame, SRC_SERIAL);
 				rec_buf_cnt = 0;
 			}
 			break;

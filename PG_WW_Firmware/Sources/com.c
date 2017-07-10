@@ -40,7 +40,7 @@ com_data_fix_t  receive_data_fix;
 // private function prototypes
 //#############################################################################
 static void interpreter(char* string, com_src_t src);
-static void interpreter_fix(uint8* frame, com_src_t src);
+static void interpreter_fix(com_frame_t* frame, com_src_t src);
 
 
 
@@ -52,7 +52,7 @@ static void interpreter_fix(uint8* frame, com_src_t src);
 void com_init(COM_CB callback) {
 
 	g_com_callback = callback;
-	serial_init(interpreter_fix);
+	serial_init(callback);
 	rf_init(interpreter_fix);
 
 }
@@ -63,30 +63,11 @@ void com_init(COM_CB callback) {
 //!  PUBLIC com_send()
 //!
 ////////////////////////////////////////////////////////////////////////////
-void com_send_fix(com_data_fix_t* data, com_dest_t dest) {
-	send_frame[0] = data->command;
-	send_frame[1]  = (uint8)(data->box_id >> 56);
-	send_frame[2]  = (uint8)(data->box_id >> 48);
-	send_frame[3]  = (uint8)(data->box_id >> 40);
-	send_frame[4]  = (uint8)(data->box_id >> 32);
-	send_frame[5]  = (uint8)(data->box_id >> 24);
-	send_frame[6]  = (uint8)(data->box_id >> 16);
-	send_frame[7]  = (uint8)(data->box_id >> 8);
-	send_frame[8]  = (uint8)(data->box_id >> 0);
-	send_frame[9]  = (uint8)(data->product_id >> 56);
-	send_frame[10] = (uint8)(data->product_id >> 48);
-	send_frame[11] = (uint8)(data->product_id >> 40);
-	send_frame[12] = (uint8)(data->product_id >> 32);
-	send_frame[13] = (uint8)(data->product_id >> 24);
-	send_frame[14] = (uint8)(data->product_id >> 16);
-	send_frame[15] = (uint8)(data->product_id >> 8);
-	send_frame[16] = (uint8)(data->product_id >> 0);
-	send_frame[17] = (uint8)(data->arg >> 8);
-	send_frame[18] = (uint8)(data->arg >> 0);
+void com_send_fix(com_frame_t* data, com_dest_t dest) {
 	if (dest == DEST_SERIAL)
-		serial_send_fix(send_frame);
+		serial_send_fix(data);
 	if (dest == DEST_RF)
-		rf_send_fix(send_frame);
+		rf_send_fix(data);
 }
 
 
@@ -115,28 +96,9 @@ void com_send(com_data_t* data, com_dest_t dest) {
 //! PRIVATE interpreter()
 //!
 ////////////////////////////////////////////////////////////////////////////
-static void interpreter_fix(uint8* frame, com_src_t src){
-	receive_data_fix.command = *frame;
-	receive_data_fix.box_id = 	frame[1] << 56 +
-								frame[2] << 48 +
-								frame[3] << 40 +
-								frame[4] << 32 +
-								frame[5] << 24 +
-								frame[6] << 16 +
-								frame[7] << 8+
-								frame[8];
-	receive_data_fix.product_id = 	frame[9] << 56 +
-									frame[10] << 48 +
-									frame[11] << 40 +
-									frame[12] << 32 +
-									frame[13] << 24 +
-									frame[14] << 16 +
-									frame[15] << 8+
-									frame[16];
-	receive_data_fix.arg = 	frame[17] << 8 +
-							frame[18];
+static void interpreter_fix(com_frame_t* frame, com_src_t src){
 
-	g_com_callback(&receive_data_fix, src);
+	g_com_callback(frame, src);
 }
 
 static void interpreter(char* string, com_src_t src){

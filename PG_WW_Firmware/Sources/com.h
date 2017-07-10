@@ -52,13 +52,18 @@ typedef struct s_com_data_fix {
 		uint16      arg;
 }com_data_fix_t;
 
+typedef union u_com_frame{
+    uint8 array[COM_FRAME_LEN];
+    com_data_fix_t frame;
+}com_frame_t;
+
 
 
 //#############################################################################
 // callback function definition
 //#############################################################################
 //typedef void (*COM_CB)(com_data_t* data, com_src_t src);
-typedef void (*COM_CB)(com_data_fix_t* frame, com_src_t src);
+typedef void (*COM_CB)(com_frame_t* frame, com_src_t src);
 
 //#############################################################################
 // functions prototypes
@@ -87,7 +92,7 @@ extern void com_init(COM_CB callback);
 |
  -----------------------------------------------------------------------------*/
 extern void com_send(com_data_t* data, com_dest_t dest);
-extern void com_send_fix(com_data_fix_t* data, com_dest_t dest);
+extern void com_send_fix(com_frame_t* data, com_dest_t dest);
 
 
 

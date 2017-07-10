@@ -53,7 +53,7 @@ extern void queue_init();
 |
  -----------------------------------------------------------------------------*/
 extern queue_status_t queue_insert(com_data_t* element);
-extern queue_status_t queue_insert_fix(com_data_fix_t* element);
+extern queue_status_t queue_insert_fix(com_frame_t* element);
 
 /*------------------------------------------------------------------------------
 | queue_first  -- return pinter to first element
@@ -66,7 +66,7 @@ extern queue_status_t queue_insert_fix(com_data_fix_t* element);
 |
  -----------------------------------------------------------------------------*/
 extern com_data_t* queue_first();
-extern com_data_fix_t* queue_first_fix();
+extern com_frame_t* queue_first_fix();
 
 
 /*------------------------------------------------------------------------------

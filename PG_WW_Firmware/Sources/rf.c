@@ -33,9 +33,11 @@
 static RF_CB  g_callback;
 static uint32 packetCounter = 0;
 // Initialize packet buffers of size RF_PKTLEN + additional information
-static uint8 txBuffer[RF_PKTLEN+1] = {0}; // + legth byte
-static uint8 rxBuffer[RF_PKTLEN+3] = {0}; // + legth byte + 2 status bytes
-static char buf [RF_PKTLEN+1];            // legth byte
+static uint8 txBuffer[RF_PAYLOADLEN+1] = {0}; // + legth byte
+static uint8 rxBuffer[RF_PAYLOADLEN+3] = {0}; // + legth byte + 2 status bytes
+static rf_frame_t rxFrame;
+static rf_frame_t txFrame;
+static char buf [RF_PAYLOADLEN+1];            // legth byte
 static uint16 wait_for_backoff;
 typedef enum e_csma_state {BUSY, SUCCESS}csma_state_t;
 csma_state_t csma_state;
@@ -141,7 +143,7 @@ void rf_init(RF_CB callback) {
 //!  PUBLIC rf_send()
 //!
 ////////////////////////////////////////////////////////////////////////////
-void rf_send_fix(uint8* frame) {
+void rf_send_fix(com_frame_t* frame) {
 
 	uint8  status = 0;
 	uint8  cca_state;
@@ -170,10 +172,10 @@ void rf_send_fix(uint8* frame) {
 
 	// copy data frame into txBuffer
 	// add length byte
-	txBuffer[0] = RF_PKTLEN;
+	txFrame.frame.length = RF_PAYLOADLEN;
 	uint16 i;
-	for(i=0; i<RF_PKTLEN; i++){
-		txBuffer[i+1] = frame[i];
+	for(i=0; i<RF_PAYLOADLEN; i++){
+		txFrame.array[i+1] = frame->array[i];
 	}
 
 
@@ -225,7 +227,7 @@ void rf_send_fix(uint8* frame) {
         P3IFG &= ~BIT5;                    // clear P3.5 interrupt flag
 
         // Write packet to TX FIFO
-        status = write_tx_fifo(txBuffer, sizeof(txBuffer));
+        status = write_tx_fifo(txFrame.array, sizeof(txFrame.array-2));
 
         // try to send
         writeByte = 0x0F;                  // 15->TXONCCA_DONE
@@ -295,7 +297,7 @@ void rf_send(char* data) {
 
 	// copy data string into txBuffer
 	// add length byte
-	txBuffer[0] = RF_PKTLEN;
+	txBuffer[0] = RF_PAYLOADLEN;
 	uint8 n = 1;
 	while(1) {
 		txBuffer[n] = data[n-1];
@@ -492,10 +494,10 @@ __interrupt void Port_3(void)
 	P3IE &= ~BIT4;                              // Disable Interrupt on P3.4
 
 	uint8 status;
-	status = read_rx_fifo(rxBuffer, sizeof(rxBuffer));
+	status = read_rx_fifo(rxFrame.array, sizeof(rxFrame.array));
 
-	if (rxBuffer[21] & 0b10000000) {            // chech CRC
-		g_callback((rxBuffer+1), SRC_RF);       // pointer of secound byte, skip length byte
+	if (rxFrame.frame.status2 & 0b10000000) {            // chech CRC
+		g_callback((&rxFrame.frame.com_frame), SRC_RF);       // pointer of secound byte, skip length byte
 	}
 	// flush RX-FIFO
 	status = spi_cmd_strobe(RF_SIDLE);
