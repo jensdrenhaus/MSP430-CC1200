@@ -60,7 +60,7 @@ void serial_init(SERIAL_CB callback) {
 	UCA0CTLW0 &= ~UCSWRST;          // Initialize eUSCI
 	UCA0IE |= UCRXIE;               // Enable RX Interrupt
 
-	rec_buf_cnt = 0;
+	rec_buf_cnt = SERIAL_FIX_BUF;
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -69,11 +69,10 @@ void serial_init(SERIAL_CB callback) {
 //!
 ////////////////////////////////////////////////////////////////////////////
 void serial_send_fix(com_frame_t *frame) {
-	int i;
-	for(i=0; i<SERIAL_FIX_BUF; i++){
+	uint16 i;
+	for(i=0; i<COM_FRAME_LEN; i++){
 		while(!(UCA0IFG&UCTXIFG));
-		UCA0TXBUF = frame->array[i];
-		i++;
+		UCA0TXBUF = frame->array[(COM_FRAME_LEN)-1-i];
 	}
 }
 
@@ -123,11 +122,11 @@ __interrupt void USCIA0RX_ISR(void)
 	  {
 		case USCI_NONE: break;
 		case USCI_UART_UCRXIFG:
+		    rec_buf_cnt--;
 			buf_frame.array[rec_buf_cnt] = (uint8)UCA0RXBUF;
-			rec_buf_cnt++;
-			if(rec_buf_cnt == SERIAL_FIX_BUF){
+			if(rec_buf_cnt == 0){
 				g_callback(&buf_frame, SRC_SERIAL);
-				rec_buf_cnt = 0;
+				rec_buf_cnt = SERIAL_FIX_BUF;
 			}
 			break;
 		case USCI_UART_UCTXIFG: break;

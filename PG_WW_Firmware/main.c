@@ -117,7 +117,7 @@ void main(void) {
     while(1)
 	{
 		while(!queue_isEmty()){
-			com_data_fix_t* tmp = queue_first_fix();
+			com_frame_t* tmp = queue_first_fix();
 			com_send_fix(tmp, DEST_RF);
 			queue_delete();
 			ui_marker_off();

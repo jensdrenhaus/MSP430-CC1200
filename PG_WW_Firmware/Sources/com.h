@@ -46,11 +46,12 @@ typedef struct s_com_data {
 
 /* structure to hold commands */
 typedef struct s_com_data_fix {
+        uint16      arg;
+        uint64      product_id;
+        uint64      box_id;
 		uint8       command;
-		uint64      box_id;
-		uint64      product_id;
-		uint16      arg;
-}com_data_fix_t;
+}__attribute__ ((packed))com_data_fix_t;
+
 
 typedef union u_com_frame{
     uint8 array[COM_FRAME_LEN];

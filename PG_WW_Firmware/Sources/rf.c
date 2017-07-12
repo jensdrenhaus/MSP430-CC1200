@@ -172,10 +172,10 @@ void rf_send_fix(com_frame_t* frame) {
 
 	// copy data frame into txBuffer
 	// add length byte
-	txFrame.frame.length = RF_PAYLOADLEN;
+	txBuffer[0] = RF_PAYLOADLEN;
 	uint16 i;
 	for(i=0; i<RF_PAYLOADLEN; i++){
-		txFrame.array[i+1] = frame->array[i];
+		txBuffer[i+1] = frame->array[(RF_PAYLOADLEN)-1-i];
 	}
 
 
@@ -227,7 +227,7 @@ void rf_send_fix(com_frame_t* frame) {
         P3IFG &= ~BIT5;                    // clear P3.5 interrupt flag
 
         // Write packet to TX FIFO
-        status = write_tx_fifo(txFrame.array, sizeof(txFrame.array-2));
+        status = write_tx_fifo(txBuffer, sizeof(txBuffer));
 
         // try to send
         writeByte = 0x0F;                  // 15->TXONCCA_DONE
@@ -494,10 +494,10 @@ __interrupt void Port_3(void)
 	P3IE &= ~BIT4;                              // Disable Interrupt on P3.4
 
 	uint8 status;
-	status = read_rx_fifo(rxFrame.array, sizeof(rxFrame.array));
+	status = read_rx_fifo(rxBuffer, sizeof(rxBuffer));
 
-	if (rxFrame.frame.status2 & 0b10000000) {            // chech CRC
-		g_callback((&rxFrame.frame.com_frame), SRC_RF);       // pointer of secound byte, skip length byte
+	if (rxBuffer[21] & 0b10000000) {            // chech CRC
+		g_callback((rxBuffer), SRC_RF);       // pointer of secound byte, skip length byte
 	}
 	// flush RX-FIFO
 	status = spi_cmd_strobe(RF_SIDLE);

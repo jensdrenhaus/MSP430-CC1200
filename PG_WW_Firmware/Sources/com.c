@@ -34,13 +34,14 @@ static char     send_str[SERIAL_MAX_BUF];
 static uint8    send_frame[COM_FRAME_LEN];
 com_data_t      receive_data;
 com_data_fix_t  receive_data_fix;
+com_frame_t     receive_frame;
 
 
 //#############################################################################
 // private function prototypes
 //#############################################################################
 static void interpreter(char* string, com_src_t src);
-static void interpreter_fix(com_frame_t* frame, com_src_t src);
+static void interpreter_fix(uint8* frame, com_src_t src);
 
 
 
@@ -96,9 +97,13 @@ void com_send(com_data_t* data, com_dest_t dest) {
 //! PRIVATE interpreter()
 //!
 ////////////////////////////////////////////////////////////////////////////
-static void interpreter_fix(com_frame_t* frame, com_src_t src){
+static void interpreter_fix(uint8* frame, com_src_t src){
+    uint16 i;
+    for(i=0; i<COM_FRAME_LEN; i++){
+        receive_frame.array[i] = frame[19-i];
+    }
 
-	g_com_callback(frame, src);
+	g_com_callback(&receive_frame, src);
 }
 
 static void interpreter(char* string, com_src_t src){
