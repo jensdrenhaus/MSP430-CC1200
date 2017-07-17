@@ -59,14 +59,34 @@ void ui_init(UI_CB callback1, UI_CB callback2){
 	TA2CCR0 = 5000;                  // SMCLK/8/5000 = 25Hz => 40ms
 	TA2CCTL0 &= ~CCIE;               // TACCR0 interrupt disabled
 
-
 	//------------------------------------------
 	// Configure GPIO
 	//------------------------------------------
 
 	PM5CTL0	&=	~LOCKLPM5;			// Disable the GPIO power-on default
 									//               high-impedance mode
+#ifdef PHYNODE
+	// Configure GPIO LEDs
+    P3DIR |= BIT5;                  // Set P3.5 to output direction
+    P4DIR |= BIT2;                  // Set P4.2 to output direction
 
+    P3OUT &= ~BIT5;                // reset green LED
+
+    // Configure GPIO Buttons
+    P3DIR &= ~BIT6;                 // Set P3.6 to input direction
+    P3REN |= BIT6;                  // Set P3.6 pullup/down Resistor
+    P3OUT |= BIT6;                  // Select P3.6 pull-up
+    P3IE  |= BIT6;                  // Enable Interrupt on P3.6
+    P3IES |= BIT6;                  // High/Low Edge
+    P3IFG &= ~BIT6;                 // clear P3.6 interrupt flag
+
+    P3DIR &= ~BIT7;                 // Set P3.7 to input direction
+    P3REN |= BIT7;                  // Set P3.7 pullup/down Resistor
+    P3OUT |= BIT7;                  // Select P3.7 pull-up
+    P3IE  |= BIT7;                  // Enable Interrupt on P3.7
+    P3IES |= BIT7;                  // High/Low Edge
+    P3IFG &= ~BIT7;                 // clear P3.7 interrupt flag
+#else
 	// Configure GPIO LEDs
 	P1DIR |= BIT0;                  // Set P1.0 to output direction
 	P4DIR |= BIT6;                  // Set P4.6 to output direction
@@ -87,30 +107,60 @@ void ui_init(UI_CB callback1, UI_CB callback2){
 	P4IE  |= BIT5;                  // Enable Interrupt on P1.1
 	P4IES |= BIT5;                  // High/Low Edge
 	P4IFG &= ~BIT5;                 // clear P4.5 interrupt flag
-
+#endif
 }
 
 inline void ui_tick(){
+#ifdef PHYNODE
+    P4OUT ^= BIT2;               // toggel red LED
+#else
 	P4OUT ^= BIT6;				 // toggel red LED
+#endif
 }
+
 
 inline void ui_toggle_status(){
+#ifdef PHYNODE
+    P3OUT ^= BIT5;              // toggle green LED
+#else
 	P1OUT ^= BIT0;              // toggle green LED
+#endif
 }
+
 
 inline void ui_marker_on(){
+#ifdef PHYNODE
+    P3OUT |= BIT5;              // set green LED
+#else
 	P1OUT |= BIT0;              // set green LED
+#endif
 }
+
+
 inline void ui_marker_off(){
+#ifdef PHYNODE
+    P3OUT &= ~BIT5;             // reset green LED
+#else
 	P1OUT &= ~BIT0;             // reset green LED
+#endif
 }
+
 
 inline void ui_red_on(){
+#ifdef PHYNODE
+    P4OUT |= BIT2;
+#else
 	P4OUT |= BIT6;
+#endif
 }
 
+
 inline void ui_red_off(){
+#ifdef PHYNODE
+    P4OUT &= ~BIT2;
+#else
 	P4OUT &= ~BIT6;
+#endif
 }
 
 
@@ -118,7 +168,7 @@ inline void ui_red_off(){
 // interrupt service routines:
 //#############################################################################
 
-
+#ifndef PHYNODE
 ////////////////////////////////////////////////////////////////////////////
 
 //!  Port 1.1 ISR for button 1 debounce
@@ -133,6 +183,7 @@ __interrupt void Port_1(void)
     TA0CTL |= TACLR;                // start Timer TA0
     pressed1 = 1;                    // save buttonstate
 }
+#endif
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -160,6 +211,7 @@ __interrupt void Timer0_A0(void)
     }
 }
 
+#ifndef PHYNODE
 ////////////////////////////////////////////////////////////////////////////
 
 //!  Port 4.5 ISR for button 2 debounce
@@ -174,6 +226,7 @@ __interrupt void Port_4(void)
     TA2CTL |= TACLR;                // start Timer TA2
     pressed2 = 1;                    // save buttonstate
 }
+#endif
 
 ////////////////////////////////////////////////////////////////////////////
 

@@ -80,8 +80,19 @@ void rf_init(RF_CB callback) {
     TA3CCR0 = 125;                   // SMCLK/8/125 = 1kHz => 1ms
     TA3CCTL0 &= ~CCIE;               // TACCR3 interrupt disabled
 
+#ifdef PHYNODE
     //------------------------------------------
-    // configure P3.5
+    // configure P1.1 for CC1200 GPIO 2
+    //------------------------------------------
+    P1DIR &= ~BIT1;                 // Set P3.5 to input direction
+    P1REN |= BIT1;                  // Set P3.5 pullup/down Resistor
+    P1OUT &= ~BIT1;                 // Select P3.5 pull-down
+    P1IE  &= ~BIT1;                 // Disable Interrupt on P3.5
+    P1IES &= ~BIT1;                 // rising edge
+    P1IFG &= ~BIT1;                 // clear P3.5 interrupt flag
+#else
+    //------------------------------------------
+    // configure P3.5 for CC1200 GPIO 2
     //------------------------------------------
     P3DIR &= ~BIT5;                 // Set P3.5 to input direction
     P3REN |= BIT5;                  // Set P3.5 pullup/down Resistor
@@ -89,6 +100,7 @@ void rf_init(RF_CB callback) {
     P3IE  &= ~BIT5;                 // Disable Interrupt on P3.5
     P3IES &= ~BIT5;                 // rising edge
     P3IFG &= ~BIT5;                 // clear P3.5 interrupt flag
+#endif
 
 	// ------------------------------------
 	// CC1200 configuration
@@ -117,21 +129,39 @@ void rf_init(RF_CB callback) {
 		status = read_reg(preferredSettings[i].addr, &readByte, 1);
 	}
 
+#ifdef PHYNODE
 	// ------------------------------------
-	// register configuration for CC1200 GPIO
+	// register configuration for CC1200 GPIO 0
 	// ------------------------------------
-	// line connected to P3.4 looks like this:
+	// line connected to P1.2 looks like this:
 	//
 	//          start sending          sending complete
 	//               ___________________________
 	// _____________|                           |_________________
 	//
-	P3DIR &= ~BIT4;                 // Set P3.4 to input direction
-	P3REN |= BIT4;                  // Set P3.4 pullup/down Resistor
-	P3OUT &= ~BIT4;                 // Select P3.4 pull-down
-	P3IE  |= BIT4;                  // Enable Interrupt on P3.4
-	P3IES |= BIT4;                  // falling edge
-	P3IFG &= ~BIT4;                 // clear P3.4 interrupt flag
+	P1DIR &= ~BIT2;                 // Set P3.4 to input direction
+	P1REN |= BIT2;                  // Set P3.4 pullup/down Resistor
+	P1OUT &= ~BIT2;                 // Select P3.4 pull-down
+	P1IE  |= BIT2;                  // Enable Interrupt on P3.4
+	P1IES |= BIT2;                  // falling edge
+	P1IFG &= ~BIT2;                 // clear P3.4 interrupt flag
+#else
+	// ------------------------------------
+    // register configuration for CC1200 GPIO 0
+    // ------------------------------------
+    // line connected to P3.4 looks like this:
+    //
+    //          start sending          sending complete
+    //               ___________________________
+    // _____________|                           |_________________
+    //
+    P3DIR &= ~BIT4;                 // Set P3.4 to input direction
+    P3REN |= BIT4;                  // Set P3.4 pullup/down Resistor
+    P3OUT &= ~BIT4;                 // Select P3.4 pull-down
+    P3IE  |= BIT4;                  // Enable Interrupt on P3.4
+    P3IES |= BIT4;                  // falling edge
+    P3IFG &= ~BIT4;                 // clear P3.4 interrupt flag
+#endif
 
 
 	spi_cmd_strobe(RF_SRX);
@@ -152,22 +182,39 @@ void rf_send_fix(com_frame_t* frame) {
 	uint8  rnd;
 	uint16 backoff;
 
-
+#ifdef PHYNODE
 	// Configure GPIO Interrupt
 	// no ISR no INT enable just set the right edge select
-	// for chekcing the ISR flag on P3.4 later for end of transmission.
-	// Line connected to P3.4 looks like this:
+	// for chekcing the ISR flag on P1.2 later for end of transmission.
+	// Line connected to P1.2 looks like this:
 	//
 	//          start sending          sending complete
 	//               ___________________________
 	// _____________|                           |_________________
 	//
-	P3DIR &= ~BIT4;                 // Set P3.4 to input direction
-	P3REN |= BIT4;                  // Set P3.4 pullup/down Resistor
-	P3OUT &= ~BIT4;                 // Select P3.4 pull-down
-	P3IE  &= ~BIT4;                 // Disable Interrupt on P3.4
-	P3IES |= BIT4;                  // falling edge
-	P3IFG &= ~BIT4;                 // clear P3.4 interrupt flag
+	P1DIR &= ~BIT2;                 // Set P1.2 to input direction
+	P1REN |= BIT2;                  // Set P1.2 pullup/down Resistor
+	P1OUT &= ~BIT2;                 // Select P1.2 pull-down
+	P1IE  &= ~BIT2;                 // Disable Interrupt on P1.2
+	P1IES |= BIT2;                  // falling edge
+	P1IFG &= ~BIT2;                 // clear P1.2 interrupt flag
+#else
+	// Configure GPIO Interrupt
+    // no ISR no INT enable just set the right edge select
+    // for chekcing the ISR flag on P3.4 later for end of transmission.
+    // Line connected to P3.4 looks like this:
+    //
+    //          start sending          sending complete
+    //               ___________________________
+    // _____________|                           |_________________
+    //
+    P3DIR &= ~BIT4;                 // Set P3.4 to input direction
+    P3REN |= BIT4;                  // Set P3.4 pullup/down Resistor
+    P3OUT &= ~BIT4;                 // Select P3.4 pull-down
+    P3IE  &= ~BIT4;                 // Disable Interrupt on P3.4
+    P3IES |= BIT4;                  // falling edge
+    P3IFG &= ~BIT4;                 // clear P3.4 interrupt flag
+#endif
 
 
 	// copy data frame into txBuffer
@@ -220,11 +267,20 @@ void rf_send_fix(com_frame_t* frame) {
         // ensure RX mode and CARRIER_SENSE_VALID
         writeByte = 0x10;                  // 16->CARRIER_SENSE_VALID
         status = write_reg(RF_IOCFG2, &writeByte, 1);
+#ifdef PHYNODE
+        P1IFG &= ~BIT1;                    // clear P1.1 interrupt flag
+#else
         P3IFG &= ~BIT5;                    // clear P3.5 interrupt flag
+#endif
         status = spi_cmd_strobe(RF_SRX);   // ensure RX to perform CCA
         status = spi_cmd_strobe(RF_SNOP);  // debugging
+#ifdef PHYNODE
+        while(!(P1IFG & BIT1));            // wait for CS to be valid -> interrupt an P3.5 (ISR disabled)
+        P1IFG &= ~BIT1;                    // clear P1.1 interrupt flag
+#else
         while(!(P3IFG & BIT5));            // wait for CS to be valid -> interrupt an P3.5 (ISR disabled)
         P3IFG &= ~BIT5;                    // clear P3.5 interrupt flag
+#endif
 
         // Write packet to TX FIFO
         status = write_tx_fifo(txBuffer, sizeof(txBuffer));
@@ -232,10 +288,17 @@ void rf_send_fix(com_frame_t* frame) {
         // try to send
         writeByte = 0x0F;                  // 15->TXONCCA_DONE
         status = write_reg(RF_IOCFG2, &writeByte, 1);
+#ifdef PHYNODE
+        P1IFG &= ~BIT1;                    // clear P1.1 interrupt flag
+        status = spi_cmd_strobe(RF_STX);   // try to send
+        while(!(P1IFG & BIT1));            // wait for CCA decision -> interrupt an P1.1 (ISR disabled)
+        P1IFG &= ~BIT1;                    // clear P1.1 interrupt flag
+#else
         P3IFG &= ~BIT5;                    // clear P3.5 interrupt flag
         status = spi_cmd_strobe(RF_STX);   // try to send
         while(!(P3IFG & BIT5));            // wait for CCA decision -> interrupt an P3.5 (ISR disabled)
         P3IFG &= ~BIT5;                    // clear P3.5 interrupt flag
+#endif
 
         // for testing
         status = read_reg(RF_RSSI1, &rssi, 1);
@@ -249,6 +312,22 @@ void rf_send_fix(com_frame_t* frame) {
 	}
 	csma_state = BUSY;
 
+#ifdef PHYNODE
+	// Wait for interruptflag that packet has been sent.
+    // Assuming the CC1200-GPIO connected to P1.2 is
+    // set to GPIOx_CFG = 0x06 -> CC1200 PKT_SYNC_RXTX interrupt
+    while(!(P1IFG & BIT2));
+    status = spi_cmd_strobe(RF_SNOP);
+
+    //flush TX FIFO
+    status = spi_cmd_strobe(RF_SIDLE);
+    status = spi_cmd_strobe(RF_SFTX);
+
+    status = spi_cmd_strobe(RF_SRX);
+    P1IFG &= ~BIT2;                 // clear P1.2 interrupt flag
+    P1IE  |= BIT2;                  // Enable Interrupt on P1.2
+    P1IFG &= ~BIT2;                 // clear P1.2 interrupt flag
+#else
 	// Wait for interruptflag that packet has been sent.
 	// Assuming the CC1200-GPIO connected to P3.4 is
 	// set to GPIOx_CFG = 0x06 -> CC1200 PKT_SYNC_RXTX interrupt
@@ -263,6 +342,7 @@ void rf_send_fix(com_frame_t* frame) {
 	P3IFG &= ~BIT4;                 // clear P3.4 interrupt flag
 	P3IE  |= BIT4;                  // Enable Interrupt on P3.4
 	P3IFG &= ~BIT4;                 // clear P3.4 interrupt flag
+#endif
 }
 
 void rf_send(char* data) {
@@ -482,11 +562,43 @@ static rf_status_t get_status(){
 //#############################################################################
 
 
+#ifdef PHYNODE
 ////////////////////////////////////////////////////////////////////////////
 
 //!  PORT3.4 ISR for indicating 'TX complete' as well as 'new data arrived'
 //!
 ////////////////////////////////////////////////////////////////////////////
+
+#pragma vector=PORT1_VECTOR
+__interrupt void Port_1(void)
+{
+    // for fix packet length
+    P1IE &= ~BIT2;                              // Disable Interrupt on P1.2
+
+    uint8 status;
+    status = read_rx_fifo(rxBuffer, sizeof(rxBuffer));
+
+    if (rxBuffer[21] & 0b10000000) {            // chech CRC
+        g_callback((rxBuffer), SRC_RF);       // pointer of secound byte, skip length byte
+    }
+    // flush RX-FIFO
+    status = spi_cmd_strobe(RF_SIDLE);
+    status = spi_cmd_strobe(RF_SFRX);
+
+    status = spi_cmd_strobe(RF_SRX);
+
+    P1IE  |= BIT2;                              // Enable Interrupt on P1.2
+    P1IFG &= ~BIT2;                             // clear P1.2 interrupt flag
+
+}
+
+#else
+////////////////////////////////////////////////////////////////////////////
+
+//!  PORT3.4 ISR for indicating 'TX complete' as well as 'new data arrived'
+//!
+////////////////////////////////////////////////////////////////////////////
+
 #pragma vector=PORT3_VECTOR
 __interrupt void Port_3(void)
 {
@@ -532,6 +644,8 @@ __interrupt void Port_3(void)
 //    P3IFG &= ~BIT4;                             // clear P3.4 interrupt flag
 
 }
+
+#endif
 
 ////////////////////////////////////////////////////////////////////////////
 
