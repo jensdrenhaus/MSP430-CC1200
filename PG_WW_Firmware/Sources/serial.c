@@ -54,9 +54,15 @@ void serial_init(SERIAL_CB callback) {
 	// Fractional portion = 0.510
 	// User's Guide Table 21-4: UCBRSx = 0xAA
 	// UCBRFx = int ( (6.510-6)*16) = 8
-	UCA0BR0 = 6;                    // 8000000/16/9600
-	UCA0BR1 = 0x00;                 // UCA0BR is a word register, set high byte
-	UCA0MCTLW |= UCOS16 | UCBRF_8 | 0xAA00;
+//	UCA0BR0 = 6;                    // 1000000/16/9600
+//	UCA0BR1 = 0x00;                 // UCA0BR is a word register, set high byte
+//	UCA0MCTLW |= UCOS16 | UCBRF_8 | 0xAA00;
+
+	// Baud Rate settings for 57600Baud (Table 24-5 Users Guid):
+	// UCOS16 = 0 , UCBRx = 17, UCBRSx = 0x4A
+	UCA0BRW = 17;
+    UCA0MCTLW = 0x4A00;
+
 	UCA0CTLW0 &= ~UCSWRST;          // Initialize eUSCI
 	UCA0IE |= UCRXIE;               // Enable RX Interrupt
 
