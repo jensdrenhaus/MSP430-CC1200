@@ -65,6 +65,7 @@ void ui_init(UI_CB callback1, UI_CB callback2){
 
 	PM5CTL0	&=	~LOCKLPM5;			// Disable the GPIO power-on default
 									//               high-impedance mode
+
 #ifdef PHYNODE
 	// Configure GPIO LEDs
     P3DIR |= BIT5;                  // Set P3.5 to output direction

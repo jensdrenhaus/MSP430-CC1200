@@ -10,6 +10,8 @@
 
 #include <stdint.h>
 
+#define PHYNODE
+
 #define NULL 0
 
 typedef int8_t int8;

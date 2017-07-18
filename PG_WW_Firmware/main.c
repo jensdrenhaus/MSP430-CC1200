@@ -103,7 +103,7 @@ void main(void) {
 
     ui_init(button1_pressed_event, button2_pressed_event);
     com_init(data_recieved_fix_event);
-    scale_init();
+    //scale_init();
     queue_init();
 
 
@@ -153,8 +153,8 @@ void data_recieved_fix_event (com_frame_t* receive_frame, com_src_t src) {
 				if(receive_frame->frame.product_id == my_product_id){
 					ui_marker_on();
 				    queue_insert_fix(&send_frame);
-//					com_send(&send_data, DEST_RF);
-//					ui_marker_off();
+					//com_send_fix(&send_data, DEST_RF);
+					//ui_marker_off();
 				}
 			}
 			else if(receive_frame->frame.command == COM_WEIGHT_CMD)
@@ -235,13 +235,13 @@ __interrupt void Timer1_A0(void)
 		if (tick){
 
 			// analoge scale
-			weight = scale_request();
-			send_data.arg = (double)weight;
+//			weight = scale_request();
+//			send_data.arg = (double)weight;
 			int16 dif = weight - old_weight;
 			// reset Paging LED
-			if (abs(dif) >=  9)
-				ui_marker_off();
-			old_weight = weight;
+//			if (abs(dif) >=  9)
+//				ui_marker_off();
+//			old_weight = weight;
 
 
 //			send_cnt++;
