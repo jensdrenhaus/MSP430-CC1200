@@ -54,7 +54,130 @@ void main(void) {
 	//------------------------------------------
 	// set Watchdogtimer to 1 sek!
 	//------------------------------------------
-    WDTCTL = WDTPW | WDTSSEL_1 | WDTCNTCL | WDTIS_4;
+    //WDTCTL = WDTPW | WDTSSEL_1 | WDTCNTCL | WDTIS_4;
+    WDTCTL = WDTPW | WDTHOLD;
+
+    PM5CTL0 &=  ~LOCKLPM5;          // Disable the GPIO power-on default
+                                    //               high-impedance mode
+
+#ifdef PHYNODE
+    // Configure Power Managementchip via SPI UCB0
+
+    UCB0CTLW0 |= UCSWRST; // SPI module in reset state
+    /* MOSI     -> P1.6   MOSI is secoundary module function on port 1
+     * MISO     -> P1.7   MISO is secoundary module function on port 1
+     * SCLK     -> P2.2   SCLK is secoundary module function on port 1
+     * STE(CS)  -> P3.3   not used, set CS line manually before communication
+     */
+    // set module function for MISO, MOSI
+    P1SEL1 |= ( BIT6 | BIT7);
+    P1SEL0 &= ~( BIT6 | BIT7);
+    // set module function for SCLK
+    P2SEL1 |= BIT2;
+    P2SEL0 &= ~(BIT2);
+    // set MOSI, SCLK as OUTPUT
+    P1DIR |= BIT6;
+    P2DIR |= BIT2;
+    // set MISO as INPUT
+    P1DIR &= ~BIT7;
+    // set Pull-UP on MISO
+    P1REN |= BIT7;
+    P1OUT |= BIT7;
+    //STE(CS) set to OUTPUT and 0 (CS is active high)
+    P3DIR |= BIT3;
+    P3OUT &= ~BIT3;
+    /* Configure
+     * SPI                                    -> UCSYNC    set
+     * 3 pin mode CS has to be set manually   -> UCMODE_0  set
+     * Master mode                            -> UCMST     set
+     * 8 Bit mode                             -> UC7BIT    clear
+     * Most sicnificant bit first             -> UCMSB     set
+     * Clock polarity: inactive stae is low   -> UCCPL     clear
+     * Clock phase: capture on first edge     -> UCCKPH    set
+     * Clock source SMCLK 1MHz                -> UCSSEL_2  set
+     */
+    UCB0CTLW0 &= ~(UC7BIT | UCCKPL);
+    UCB0CTLW0 |= UCSYNC | UCMODE_0 | UCMST | UCMSB | UCCKPH | UCSSEL_2;
+    UCB0BR0 = 0;            // no prescaler -> BitClk = ModuleClk(SMCLK = 1MHz)
+    // Release for operation
+    UCB0CTL1 &= ~UCSWRST;
+    // disable Buck-boost converter on PM-Chip
+    P1DIR |= BIT4;
+    P1OUT &= ~BIT4;
+    // activate chip
+    P1DIR |= BIT3;
+    P1OUT |= BIT3;
+
+    //write Enable
+    // set CS high
+    P3OUT |= BIT3;
+    __delay_cycles(10000); // delay 10ms (1MHz -> cycle=1us, 10ms = 10000
+    // send address
+    UCB0IFG &= ~UCRXIFG;
+    UCB0TXBUF= 0x01;
+    //wait for completion
+    while(!(UCB0IFG & UCRXIFG));
+    // send 0 to indicate write operation
+    UCB0IFG &= ~UCRXIFG;
+    UCB0TXBUF= 0x00;
+    //wait for completion
+    while(!(UCB0IFG & UCRXIFG));
+    // send enable value
+    UCB0IFG &= ~UCRXIFG;
+    UCB0TXBUF= 0x80;
+    //wait for completion
+    while(!(UCB0IFG & UCRXIFG));
+    __delay_cycles(10000); // delay 10ms (1MHz -> cycle=1us, 10ms = 10000
+    // set CS low
+    P3OUT &= ~BIT3;
+
+    //write Voltage
+    // set CS high
+    P3OUT |= BIT3;
+    __delay_cycles(10000); // delay 10ms (1MHz -> cycle=1us, 10ms = 10000
+    // send address
+    UCB0IFG &= ~UCRXIFG;
+    UCB0TXBUF= 0x03;
+    //wait for completion
+    while(!(UCB0IFG & UCRXIFG));
+    // send 0 to indicate write operation
+    UCB0IFG &= ~UCRXIFG;
+    UCB0TXBUF= 0x00;
+    //wait for completion
+    while(!(UCB0IFG & UCRXIFG));
+    // send enable value
+    UCB0IFG &= ~UCRXIFG;
+    UCB0TXBUF= 0x27;
+    //wait for completion
+    while(!(UCB0IFG & UCRXIFG));
+    __delay_cycles(10000); // delay 10ms (1MHz -> cycle=1us, 10ms = 10000
+    // set CS low
+    P3OUT &= ~BIT3;
+
+    //write BB1 enable
+    // set CS high
+    P3OUT |= BIT3;
+    __delay_cycles(10000); // delay 10ms (1MHz -> cycle=1us, 10ms = 10000
+    // send address
+    UCB0IFG &= ~UCRXIFG;
+    UCB0TXBUF= 0x00;
+    //wait for completion
+    while(!(UCB0IFG & UCRXIFG));
+    // send 0 to indicate write operation
+    UCB0IFG &= ~UCRXIFG;
+    UCB0TXBUF= 0x00;
+    //wait for completion
+    while(!(UCB0IFG & UCRXIFG));
+    // send enable value
+    UCB0IFG &= ~UCRXIFG;
+    UCB0TXBUF= 0x05;
+    //wait for completion
+    while(!(UCB0IFG & UCRXIFG));
+    __delay_cycles(10000); // delay 10ms (1MHz -> cycle=1us, 10ms = 10000
+    // set CS low
+    P3OUT &= ~BIT3;
+
+#endif
 
     //------------------------------------------
 	// configure Timer A1 used for periodic events
@@ -106,79 +229,6 @@ void main(void) {
     //scale_init();
     queue_init();
 
-#ifdef PHYNODE
-    // Configure Power Managementchip via SPI UCB0
-
-    UCB0CTLW0 |= UCSWRST; // SPI module in reset state
-    /* MOSI     -> P1.6   MOSI is secoundary module function on port 1
-     * MISO     -> P1.7   MISO is secoundary module function on port 1
-     * SCLK     -> P2.2   SCLK is secoundary module function on port 1
-     * STE(CS)  -> P3.3   not used, set CS line manually before communication
-     */
-    // set module function for MISO, MOSI
-    P1SEL1 |= ( BIT6 | BIT7);
-    P1SEL0 &= ~( BIT6 | BIT7);
-    // set module function for SCLK
-    P2SEL1 |= BIT2;
-    P2SEL0 &= ~(BIT2);
-    // set MOSI, SCLK as OUTPUT
-    P1DIR |= BIT6;
-    P2DIR |= BIT2;
-    // set MISO as INPUT
-    P1DIR &= ~BIT7;
-    // set Pull-UP on MISO
-    P1REN |= BIT7;
-    P1OUT |= BIT7;
-    //STE(CS) set to OUTPUT and 0 (CS is active high)
-    P3DIR |= BIT3;
-    P3OUT &= ~BIT3;
-    /* Configure
-     * SPI                                    -> UCSYNC    set
-     * 3 pin mode CS has to be set manually   -> UCMODE_0  set
-     * Master mode                            -> UCMST     set
-     * 8 Bit mode                             -> UC7BIT    clear
-     * Most sicnificant bit first             -> UCMSB     set
-     * Clock polarity: inactive stae is low   -> UCCPL     clear
-     * Clock phase: capture on first edge     -> UCCKPH    set
-     * Clock source SMCLK 1MHz                -> UCSSEL_2  set
-     */
-    UCB0CTLW0 &= ~(UC7BIT | UCCKPL);
-    UCB0CTLW0 |= UCSYNC | UCMODE_0 | UCMST | UCMSB | UCCKPH | UCSSEL_2;
-    UCB0BR0 = 0;            // no prescaler -> BitClk = ModuleClk(SMCLK = 1MHz)
-    // Release for operation
-    UCB0CTL1 &= ~UCSWRST;
-    // disable Buck-boost converter on PM-Chip
-    P1DIR |= BIT4;
-    P1OUT &= ~BIT4;
-    // activate chip
-    P1DIR |= BIT3;
-    P1OUT |= BIT3;
-
-    //write Enable
-    uint8 status;
-    // set CS high
-    P3OUT |= BIT3;
-    __delay_cycles(10000); // delay 10ms (1MHz -> cycle=1us, 10ms = 10000
-    // send address
-    UCB0IFG &= ~UCRXIFG;
-    UCB0TXBUF= 0x01;
-    //wait for completion
-    while(!(UCB0IFG & UCRXIFG));
-    // send 0 to indicate write operation
-    UCB0IFG &= ~UCRXIFG;
-    UCB0TXBUF= 0x00;
-    //wait for completion
-    while(!(UCB0IFG & UCRXIFG));
-    // send enable value
-    UCB0IFG &= ~UCRXIFG;
-    UCB0TXBUF= 0x80;
-    //wait for completion
-    while(!(UCB0IFG & UCRXIFG));
-    __delay_cycles(10000); // delay 10ms (1MHz -> cycle=1us, 10ms = 10000
-    // set CS low
-    P3OUT &= ~BIT3;
-
-#endif
 
 
     _EINT();                         // global interrupt enable
@@ -359,7 +409,7 @@ __interrupt void Timer1_A0(void)
 		break;
 	}
 
-	WDTCTL = WDTPW | WDTSSEL_1 | WDTCNTCL | WDTIS_4; // reset WDT
+	//WDTCTL = WDTPW | WDTSSEL_1 | WDTCNTCL | WDTIS_4; // reset WDT
 
 }
 
