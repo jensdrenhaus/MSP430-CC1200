@@ -72,6 +72,7 @@ void ui_init(UI_CB callback1, UI_CB callback2){
     P4DIR |= BIT2;                  // Set P4.2 to output direction
 
     P3OUT &= ~BIT5;                // reset green LED
+    P4OUT |= BIT2;                 // set red LED
 
     // Configure GPIO Buttons
     P3DIR &= ~BIT6;                 // Set P3.6 to input direction
@@ -93,6 +94,7 @@ void ui_init(UI_CB callback1, UI_CB callback2){
 	P4DIR |= BIT6;                  // Set P4.6 to output direction
 
 	P1OUT &= ~BIT0;                // reset green LED
+	P4OUT |= BIT6;                 // set red LED
 
 	// Configure GPIO Buttons
 	P1DIR &= ~BIT1;                 // Set P1.1 to input direction

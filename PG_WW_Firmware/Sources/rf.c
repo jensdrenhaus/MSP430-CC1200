@@ -234,6 +234,8 @@ void rf_send_fix(com_frame_t* frame) {
 	    status = spi_cmd_strobe(RF_SRX); // RX state for further randomized number
 	    status = read_reg(RF_RNDGEN, &rnd, 1);
 	    backoff = (uint16) (rnd & 0b0000000001111111); // use all 7 Bits -> 0 to 127
+	    status = read_reg(RF_RNDGEN, &rnd, 1);
+        backoff += (uint16) (rnd & 0b0000000001111111); // use all 7 Bits again -> 0 to 255
 
 	    // put CC1200 into SLEEP while backoff
 	    status = spi_cmd_strobe(RF_SIDLE);
