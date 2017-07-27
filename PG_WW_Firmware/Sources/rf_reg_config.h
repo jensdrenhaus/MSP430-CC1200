@@ -21,7 +21,7 @@ static const rf_setting_t preferredSettings[]=
   {RF_IOCFG3,              0x06},
   {RF_IOCFG2,              0x0F}, /* TXONCCA_DONE*/
   {RF_IOCFG1,              0x30},
-  {RF_IOCFG0,              0x06}, /* PKT_SYNC_RXTX*/
+  {RF_IOCFG0,              0x13}, /* PKT_CRC_OK*/
   {RF_SYNC3,               0x93},
   {RF_SYNC2,               0x0B},
   {RF_SYNC1,               0x51},
@@ -48,7 +48,7 @@ static const rf_setting_t preferredSettings[]=
   {RF_AGC_CFG1,            0x11},
   {RF_AGC_CFG0,            0x9C}, /* 0x94 -> 0x9C RSSI_VALID_CNT = 9*/
   {RF_FIFO_CFG,            0x00},
-  {RF_DEV_ADDR,            0x00},
+  {RF_DEV_ADDR,            0x02}, /* initial Dev-Add = 00000010, change in App) */
   {RF_SETTLING_CFG,        0x0B},
   {RF_FS_CFG,              0x12},
   {RF_WOR_CFG1,            0x08},
@@ -57,14 +57,14 @@ static const rf_setting_t preferredSettings[]=
   {RF_WOR_EVENT0_LSB,      0x00},
   {RF_RXDCM_TIME,          0x00},
   {RF_PKT_CFG2,            0x04}, /* CCA_MODE = 001 (RSSI below threshold)*/
-  {RF_PKT_CFG1,            0x03},
-  {RF_PKT_CFG0,            0x20},
+  {RF_PKT_CFG1,            0x1B}, /* CRC check, addr check (0x00,0xFF or DEV_ADDR), append status bytes to RX FIFO*/
+  {RF_PKT_CFG0,            0x00}, /* Fix Pkt Len*/
   {RF_RFEND_CFG1,          0x0F},
-  {RF_RFEND_CFG0,          0x00},
+  {RF_RFEND_CFG0,          0x00}, /* stay in RX after bad packet */
   {RF_PA_CFG1,             0x7F},
   {RF_PA_CFG0,             0x56},
   {RF_ASK_CFG,             0x0F},
-  {RF_PKT_LEN,             0xFF},
+  {RF_PKT_LEN,             0x14}, /* Pkt Len = Payload+Addr = 19+1 = 20 -> 0x14*/
   {RF_IF_MIX_CFG,          0x1C},
   {RF_FREQOFF_CFG,         0x20},
   {RF_TOC_CFG,             0x03},

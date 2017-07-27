@@ -287,6 +287,9 @@
 
 
 #define RF_PAYLOADLEN                   (COM_FRAME_LEN) // 1 < PKTLEN < 126
+#define RF_BC_ADDR                      0xFF
+#define RF_AP_ADDR                      0x01
+#define RF_STD_ADDR                     0x02
 
 //#############################################################################
 // datatypes
@@ -310,7 +313,9 @@ typedef union u_rf_frame{
 }rf_frame_t;
 
 
-
+uint8 dev_addr;
+uint8 br_addr;
+uint8 ap_addr;
 typedef uint8 rf_status_t;
 
 

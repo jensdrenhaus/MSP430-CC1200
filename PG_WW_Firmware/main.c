@@ -240,12 +240,12 @@ void main(void) {
     //for fix packet length
     while(1)
 	{
-		while(!queue_isEmty()){
-			com_frame_t* tmp = queue_first_fix();
-			com_send_fix(tmp, DEST_RF);
-			queue_delete();
-			ui_marker_off();
-		}
+//		while(!queue_isEmty()){
+//			com_frame_t* tmp = queue_first_fix();
+//			com_send_fix(tmp, DEST_RF);
+//			queue_delete();
+//			ui_marker_off();
+//		}
 		// do nothing
 		// wait for interrupts
 	}
@@ -276,9 +276,10 @@ void data_recieved_fix_event (com_frame_t* receive_frame, com_src_t src) {
 			if(receive_frame->frame.command == COM_PAGE_CMD){
 				if(receive_frame->frame.product_id == my_product_id){
 					ui_marker_on();
-				    queue_insert_fix(&send_frame);
-					//com_send_fix(&send_data, DEST_RF);
-					//ui_marker_off();
+				    //queue_insert_fix(&send_frame);
+					com_send_fix(&send_frame, DEST_RF);
+					ui_marker_off();
+				    return;
 				}
 			}
 			else if(receive_frame->frame.command == COM_WEIGHT_CMD)

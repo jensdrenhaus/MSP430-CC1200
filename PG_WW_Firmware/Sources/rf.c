@@ -33,8 +33,8 @@
 static RF_CB  g_callback;
 static uint32 packetCounter = 0;
 // Initialize packet buffers of size RF_PKTLEN + additional information
-static uint8 txBuffer[RF_PAYLOADLEN+1] = {0}; // + legth byte
-static uint8 rxBuffer[RF_PAYLOADLEN+3] = {0}; // + legth byte + 2 status bytes
+static uint8 txBuffer[RF_PAYLOADLEN+1] = {0}; // + addr byte
+static uint8 rxBuffer[RF_PAYLOADLEN+3] = {0}; // + addr byte + 2 status bytes
 static rf_frame_t rxFrame;
 static rf_frame_t txFrame;
 static char buf [RF_PAYLOADLEN+1];            // legth byte
@@ -63,6 +63,9 @@ void rf_init(RF_CB callback) {
 	// save funtion ptr to callback func.
 	// ------------------------------------
 	g_callback = callback;
+
+	dev_addr = 0x01;
+
 
 	rf_status_t status;
 	wait_for_backoff = 1;
@@ -135,7 +138,7 @@ void rf_init(RF_CB callback) {
 	// ------------------------------------
 	// line connected to P1.2 looks like this:
 	//
-	//          start sending          sending complete
+	//in RX          pkt OK
 	//               ___________________________
 	// _____________|                           |_________________
 	//
@@ -143,7 +146,7 @@ void rf_init(RF_CB callback) {
 	P1REN |= BIT2;                  // Set P3.4 pullup/down Resistor
 	P1OUT &= ~BIT2;                 // Select P3.4 pull-down
 	P1IE  |= BIT2;                  // Enable Interrupt on P3.4
-	P1IES |= BIT2;                  // falling edge
+	P1IES &= ~BIT2;                  // rising edge
 	P1IFG &= ~BIT2;                 // clear P3.4 interrupt flag
 #else
 	// ------------------------------------
@@ -151,7 +154,7 @@ void rf_init(RF_CB callback) {
     // ------------------------------------
     // line connected to P3.4 looks like this:
     //
-    //          start sending          sending complete
+    //in RX          pkt OK
     //               ___________________________
     // _____________|                           |_________________
     //
@@ -159,10 +162,18 @@ void rf_init(RF_CB callback) {
     P3REN |= BIT4;                  // Set P3.4 pullup/down Resistor
     P3OUT &= ~BIT4;                 // Select P3.4 pull-down
     P3IE  |= BIT4;                  // Enable Interrupt on P3.4
-    P3IES |= BIT4;                  // falling edge
+    P3IES &= ~BIT4;                  // rising edge
     P3IFG &= ~BIT4;                 // clear P3.4 interrupt flag
 #endif
 
+
+
+#ifdef AP
+    writeByte = RF_AP_ADDR;
+#else
+    writeByte = RF_STD_ADDR;
+#endif
+    status = write_reg(RF_DEV_ADDR, &writeByte, 1); // set dev addr
 
 	spi_cmd_strobe(RF_SRX);
 
@@ -182,6 +193,7 @@ void rf_send_fix(com_frame_t* frame) {
 	uint8  rnd;
 	uint16 backoff;
 
+
 #ifdef PHYNODE
 	// Configure GPIO Interrupt
 	// no ISR no INT enable just set the right edge select
@@ -192,9 +204,9 @@ void rf_send_fix(com_frame_t* frame) {
 	//               ___________________________
 	// _____________|                           |_________________
 	//
-	P1DIR &= ~BIT2;                 // Set P1.2 to input direction
-	P1REN |= BIT2;                  // Set P1.2 pullup/down Resistor
-	P1OUT &= ~BIT2;                 // Select P1.2 pull-down
+//	P1DIR &= ~BIT2;                 // Set P1.2 to input direction
+//	P1REN |= BIT2;                  // Set P1.2 pullup/down Resistor
+//	P1OUT &= ~BIT2;                 // Select P1.2 pull-down
 	P1IE  &= ~BIT2;                 // Disable Interrupt on P1.2
 	P1IES |= BIT2;                  // falling edge
 	P1IFG &= ~BIT2;                 // clear P1.2 interrupt flag
@@ -208,18 +220,25 @@ void rf_send_fix(com_frame_t* frame) {
     //               ___________________________
     // _____________|                           |_________________
     //
-    P3DIR &= ~BIT4;                 // Set P3.4 to input direction
-    P3REN |= BIT4;                  // Set P3.4 pullup/down Resistor
-    P3OUT &= ~BIT4;                 // Select P3.4 pull-down
+//    P3DIR &= ~BIT4;                 // Set P3.4 to input direction
+//    P3REN |= BIT4;                  // Set P3.4 pullup/down Resistor
+//    P3OUT &= ~BIT4;                 // Select P3.4 pull-down
     P3IE  &= ~BIT4;                 // Disable Interrupt on P3.4
     P3IES |= BIT4;                  // falling edge
     P3IFG &= ~BIT4;                 // clear P3.4 interrupt flag
 #endif
 
+    // change GPIO0 signal to indicate TX compl
+    writeByte = 0x06;             // 06->PKT_SYNC_RXTX
+    status = write_reg(RF_IOCFG0, &writeByte, 1);
 
 	// copy data frame into txBuffer
 	// add length byte
-	txBuffer[0] = RF_PAYLOADLEN;
+#ifdef AP
+	txBuffer[0] = RF_BC_ADDR; // set destination addr to broadcast
+#else
+	txBuffer[0] = RF_AP_ADDR; // set destination addr to AccessPoint addr
+#endif
 	uint16 i;
 	for(i=0; i<RF_PAYLOADLEN; i++){
 		txBuffer[i+1] = frame->array[(RF_PAYLOADLEN)-1-i];
@@ -320,32 +339,61 @@ void rf_send_fix(com_frame_t* frame) {
     // set to GPIOx_CFG = 0x06 -> CC1200 PKT_SYNC_RXTX interrupt
     while(!(P1IFG & BIT2));
     status = spi_cmd_strobe(RF_SNOP);
+    P1IFG &= ~BIT2;                 // clear P1.2 interrupt flag
 
     //flush TX FIFO
     status = spi_cmd_strobe(RF_SIDLE);
     status = spi_cmd_strobe(RF_SFTX);
 
     status = spi_cmd_strobe(RF_SRX);
+
+    // change GPIO0 signal to indicate RX PKT OK
     P1IFG &= ~BIT2;                 // clear P1.2 interrupt flag
+    writeByte = 0x13;             // PKT_CRC_OK
+    status = write_reg(RF_IOCFG0, &writeByte, 1);
+
+    P1IFG &= ~BIT2;                 // clear P1.2 interrupt flag
+    P1IES &= ~BIT2;                 // rising edge
     P1IE  |= BIT2;                  // Enable Interrupt on P1.2
     P1IFG &= ~BIT2;                 // clear P1.2 interrupt flag
+
 #else
 	// Wait for interruptflag that packet has been sent.
 	// Assuming the CC1200-GPIO connected to P3.4 is
 	// set to GPIOx_CFG = 0x06 -> CC1200 PKT_SYNC_RXTX interrupt
 	while(!(P3IFG & BIT4));
 	status = spi_cmd_strobe(RF_SNOP);
+	P3IFG &= ~BIT4;                 // clear P3.4 interrupt flag
 
 	//flush TX FIFO
 	status = spi_cmd_strobe(RF_SIDLE);
 	status = spi_cmd_strobe(RF_SFTX);
 
 	status = spi_cmd_strobe(RF_SRX);
+
+	// change GPIO0 signal to indicate RX PKT OK
 	P3IFG &= ~BIT4;                 // clear P3.4 interrupt flag
+    writeByte = 0x13;             // PKT_CRC_OK
+    status = write_reg(RF_IOCFG0, &writeByte, 1);
+
+	P3IFG &= ~BIT4;                 // clear P3.4 interrupt flag
+	P3IES &= ~BIT4;                  // rising edge
 	P3IE  |= BIT4;                  // Enable Interrupt on P3.4
 	P3IFG &= ~BIT4;                 // clear P3.4 interrupt flag
 #endif
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 void rf_send(char* data) {
 
@@ -580,14 +628,16 @@ __interrupt void Port_1(void)
     uint8 status;
     status = read_rx_fifo(rxBuffer, sizeof(rxBuffer));
 
-    if (rxBuffer[21] & 0b10000000) {            // chech CRC
-        g_callback((rxBuffer), SRC_RF);       // pointer of secound byte, skip length byte
-    }
     // flush RX-FIFO
     status = spi_cmd_strobe(RF_SIDLE);
     status = spi_cmd_strobe(RF_SFRX);
 
     status = spi_cmd_strobe(RF_SRX);
+
+    if (rxBuffer[21] & 0b10000000) {            // chech CRC
+        g_callback((rxBuffer), SRC_RF);       // pointer of secound byte, skip length byte
+    }
+
 
     P1IE  |= BIT2;                              // Enable Interrupt on P1.2
     P1IFG &= ~BIT2;                             // clear P1.2 interrupt flag
@@ -610,15 +660,19 @@ __interrupt void Port_3(void)
 	uint8 status;
 	status = read_rx_fifo(rxBuffer, sizeof(rxBuffer));
 
+	// flush RX-FIFO
+    status = spi_cmd_strobe(RF_SIDLE);
+    status = spi_cmd_strobe(RF_SFRX);
+
+    status = spi_cmd_strobe(RF_SRX);
+
+    P3IFG &= ~BIT4;                             // clear P3.4 interrupt flag
 	if (rxBuffer[21] & 0b10000000) {            // chech CRC
 		g_callback((rxBuffer), SRC_RF);       // pointer of secound byte, skip length byte
 	}
-	// flush RX-FIFO
-	status = spi_cmd_strobe(RF_SIDLE);
-	status = spi_cmd_strobe(RF_SFRX);
 
-	status = spi_cmd_strobe(RF_SRX);
 
+	P3IFG &= ~BIT4;                             // clear P3.4 interrupt flag
 	P3IE  |= BIT4;                              // Enable Interrupt on P3.4
 	P3IFG &= ~BIT4;                             // clear P3.4 interrupt flag
 

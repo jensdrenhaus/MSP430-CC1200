@@ -104,6 +104,7 @@ static void interpreter_fix(uint8* frame, com_src_t src){
     }
 
 	g_com_callback(&receive_frame, src);
+	return;
 }
 
 static void interpreter(char* string, com_src_t src){
