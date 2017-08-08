@@ -45,6 +45,7 @@ void data_recieved_fix_event(com_frame_t* receive_frame, com_src_t src);
 void weight_changed_event(int val);
 void button1_pressed_event();
 void button2_pressed_event();
+void conf_powmgmt();
 
 
 //#############################################################################
@@ -62,121 +63,7 @@ void main(void) {
 
 #ifdef PHYNODE
     // Configure Power Managementchip via SPI UCB0
-
-    UCB0CTLW0 |= UCSWRST; // SPI module in reset state
-    /* MOSI     -> P1.6   MOSI is secoundary module function on port 1
-     * MISO     -> P1.7   MISO is secoundary module function on port 1
-     * SCLK     -> P2.2   SCLK is secoundary module function on port 1
-     * STE(CS)  -> P3.3   not used, set CS line manually before communication
-     */
-    // set module function for MISO, MOSI
-    P1SEL1 |= ( BIT6 | BIT7);
-    P1SEL0 &= ~( BIT6 | BIT7);
-    // set module function for SCLK
-    P2SEL1 |= BIT2;
-    P2SEL0 &= ~(BIT2);
-    // set MOSI, SCLK as OUTPUT
-    P1DIR |= BIT6;
-    P2DIR |= BIT2;
-    // set MISO as INPUT
-    P1DIR &= ~BIT7;
-    // set Pull-UP on MISO
-    P1REN |= BIT7;
-    P1OUT |= BIT7;
-    //STE(CS) set to OUTPUT and 0 (CS is active high)
-    P3DIR |= BIT3;
-    P3OUT &= ~BIT3;
-    /* Configure
-     * SPI                                    -> UCSYNC    set
-     * 3 pin mode CS has to be set manually   -> UCMODE_0  set
-     * Master mode                            -> UCMST     set
-     * 8 Bit mode                             -> UC7BIT    clear
-     * Most sicnificant bit first             -> UCMSB     set
-     * Clock polarity: inactive stae is low   -> UCCPL     clear
-     * Clock phase: capture on first edge     -> UCCKPH    set
-     * Clock source SMCLK 1MHz                -> UCSSEL_2  set
-     */
-    UCB0CTLW0 &= ~(UC7BIT | UCCKPL);
-    UCB0CTLW0 |= UCSYNC | UCMODE_0 | UCMST | UCMSB | UCCKPH | UCSSEL_2;
-    UCB0BR0 = 0;            // no prescaler -> BitClk = ModuleClk(SMCLK = 1MHz)
-    // Release for operation
-    UCB0CTL1 &= ~UCSWRST;
-    // disable Buck-boost converter on PM-Chip
-    P1DIR |= BIT4;
-    P1OUT &= ~BIT4;
-    // activate chip
-    P1DIR |= BIT3;
-    P1OUT |= BIT3;
-
-    //write Enable
-    // set CS high
-    P3OUT |= BIT3;
-    __delay_cycles(10000); // delay 10ms (1MHz -> cycle=1us, 10ms = 10000
-    // send address
-    UCB0IFG &= ~UCRXIFG;
-    UCB0TXBUF= 0x01;
-    //wait for completion
-    while(!(UCB0IFG & UCRXIFG));
-    // send 0 to indicate write operation
-    UCB0IFG &= ~UCRXIFG;
-    UCB0TXBUF= 0x00;
-    //wait for completion
-    while(!(UCB0IFG & UCRXIFG));
-    // send enable value
-    UCB0IFG &= ~UCRXIFG;
-    UCB0TXBUF= 0x80;
-    //wait for completion
-    while(!(UCB0IFG & UCRXIFG));
-    __delay_cycles(10000); // delay 10ms (1MHz -> cycle=1us, 10ms = 10000
-    // set CS low
-    P3OUT &= ~BIT3;
-
-    //write Voltage
-    // set CS high
-    P3OUT |= BIT3;
-    __delay_cycles(10000); // delay 10ms (1MHz -> cycle=1us, 10ms = 10000
-    // send address
-    UCB0IFG &= ~UCRXIFG;
-    UCB0TXBUF= 0x03;
-    //wait for completion
-    while(!(UCB0IFG & UCRXIFG));
-    // send 0 to indicate write operation
-    UCB0IFG &= ~UCRXIFG;
-    UCB0TXBUF= 0x00;
-    //wait for completion
-    while(!(UCB0IFG & UCRXIFG));
-    // send enable value
-    UCB0IFG &= ~UCRXIFG;
-    UCB0TXBUF= 0x27;
-    //wait for completion
-    while(!(UCB0IFG & UCRXIFG));
-    __delay_cycles(10000); // delay 10ms (1MHz -> cycle=1us, 10ms = 10000
-    // set CS low
-    P3OUT &= ~BIT3;
-
-    //write BB1 enable
-    // set CS high
-    P3OUT |= BIT3;
-    __delay_cycles(10000); // delay 10ms (1MHz -> cycle=1us, 10ms = 10000
-    // send address
-    UCB0IFG &= ~UCRXIFG;
-    UCB0TXBUF= 0x00;
-    //wait for completion
-    while(!(UCB0IFG & UCRXIFG));
-    // send 0 to indicate write operation
-    UCB0IFG &= ~UCRXIFG;
-    UCB0TXBUF= 0x00;
-    //wait for completion
-    while(!(UCB0IFG & UCRXIFG));
-    // send enable value
-    UCB0IFG &= ~UCRXIFG;
-    UCB0TXBUF= 0x05;
-    //wait for completion
-    while(!(UCB0IFG & UCRXIFG));
-    __delay_cycles(10000); // delay 10ms (1MHz -> cycle=1us, 10ms = 10000
-    // set CS low
-    P3OUT &= ~BIT3;
-
+    conf_powmgmt();
 #endif
 
     //------------------------------------------
@@ -209,15 +96,6 @@ void main(void) {
 	// init modules
 	//------------------------------------------
 
-    send_data.command = WEIGHT;
-    send_data.box_id = my_box_id;
-    send_data.product_id = my_product_id;
-    send_data.arg = 0.0;
-
-    send_data_fix.command = COM_WEIGHT_CMD;
-	send_data_fix.box_id = my_box_id;
-	send_data_fix.product_id = my_product_id;
-	send_data_fix.arg = 33;
 
 	send_frame.frame.command = COM_WEIGHT_CMD;
     send_frame.frame.box_id = my_box_id;
@@ -226,7 +104,7 @@ void main(void) {
 
     ui_init(button1_pressed_event, button2_pressed_event);
     com_init(data_recieved_fix_event);
-    //scale_init();
+    //scale_init(); // XXX Fix: analog input port is in use on PhyNode
     queue_init();
 
 
@@ -237,7 +115,6 @@ void main(void) {
 	// MAIN LOOP
 	//------------------------------------------
 
-    //for fix packet length
     while(1)
 	{
 //		while(!queue_isEmty()){
@@ -249,19 +126,6 @@ void main(void) {
 		// do nothing
 		// wait for interrupts
 	}
-
-    // for old text based commands
-//    while(1)
-//    {
-//        while(!queue_isEmty()){
-//            com_data_t* tmp = queue_first();
-//            com_send(tmp, DEST_RF);
-//            queue_delete();
-//            ui_marker_off();
-//        }
-//    	// do nothing
-//    	// wait for interrupts
-//    }
 }
 
 
@@ -414,4 +278,120 @@ __interrupt void Timer1_A0(void)
 
 }
 
+void conf_powmgmt(){
 
+    UCB0CTLW0 |= UCSWRST; // SPI module B0 in reset state
+    /* MOSI     -> P1.6   MOSI is secoundary module function on port 1
+     * MISO     -> P1.7   MISO is secoundary module function on port 1
+     * SCLK     -> P2.2   SCLK is secoundary module function on port 1
+     * STE(CS)  -> P3.3   not used, set CS line manually before communication
+     */
+    // set module function for MISO, MOSI
+    P1SEL1 |= ( BIT6 | BIT7);
+    P1SEL0 &= ~( BIT6 | BIT7);
+    // set module function for SCLK
+    P2SEL1 |= BIT2;
+    P2SEL0 &= ~(BIT2);
+    // set MOSI, SCLK as OUTPUT
+    P1DIR |= BIT6;
+    P2DIR |= BIT2;
+    // set MISO as INPUT
+    P1DIR &= ~BIT7;
+    // set Pull-UP on MISO
+    P1REN |= BIT7;
+    P1OUT |= BIT7;
+    //STE(CS) set to OUTPUT and 0 (CS is active high)
+    P3DIR |= BIT3;
+    P3OUT &= ~BIT3;
+    /* Configure
+     * SPI                                    -> UCSYNC    set
+     * 3 pin mode CS has to be set manually   -> UCMODE_0  set
+     * Master mode                            -> UCMST     set
+     * 8 Bit mode                             -> UC7BIT    clear
+     * Most sicnificant bit first             -> UCMSB     set
+     * Clock polarity: inactive stae is low   -> UCCPL     clear
+     * Clock phase: capture on first edge     -> UCCKPH    set
+     * Clock source SMCLK 1MHz                -> UCSSEL_2  set
+     */
+    UCB0CTLW0 &= ~(UC7BIT | UCCKPL);
+    UCB0CTLW0 |= UCSYNC | UCMODE_0 | UCMST | UCMSB | UCCKPH | UCSSEL_2;
+    UCB0BR0 = 0;            // no prescaler -> BitClk = ModuleClk(SMCLK = 1MHz)
+    // Release for operation
+    UCB0CTL1 &= ~UCSWRST;
+
+    // disable Buck-boost converter on PM-Chip
+    P1DIR |= BIT4;
+    P1OUT &= ~BIT4;
+    // activate chip
+    P1DIR |= BIT3;
+    P1OUT |= BIT3;
+
+    //write Enable
+    // set CS high
+    P3OUT |= BIT3;
+    __delay_cycles(10000); // delay 10ms (1MHz -> cycle=1us, 10ms = 10000
+    // send address
+    UCB0IFG &= ~UCRXIFG;
+    UCB0TXBUF= 0x01;
+    //wait for completion
+    while(!(UCB0IFG & UCRXIFG));
+    // send 0 to indicate write operation
+    UCB0IFG &= ~UCRXIFG;
+    UCB0TXBUF= 0x00;
+    //wait for completion
+    while(!(UCB0IFG & UCRXIFG));
+    // send value
+    UCB0IFG &= ~UCRXIFG;
+    UCB0TXBUF= 0x80;
+    //wait for completion
+    while(!(UCB0IFG & UCRXIFG));
+    __delay_cycles(10000); // delay 10ms (1MHz -> cycle=1us, 10ms = 10000
+    // set CS low
+    P3OUT &= ~BIT3;
+
+    //write Voltage
+    // set CS high
+    P3OUT |= BIT3;
+    __delay_cycles(10000); // delay 10ms (1MHz -> cycle=1us, 10ms = 10000
+    // send address
+    UCB0IFG &= ~UCRXIFG;
+    UCB0TXBUF= 0x03;
+    //wait for completion
+    while(!(UCB0IFG & UCRXIFG));
+    // send 0 to indicate write operation
+    UCB0IFG &= ~UCRXIFG;
+    UCB0TXBUF= 0x00;
+    //wait for completion
+    while(!(UCB0IFG & UCRXIFG));
+    // send value
+    UCB0IFG &= ~UCRXIFG;
+    UCB0TXBUF= 0x27;
+    //wait for completion
+    while(!(UCB0IFG & UCRXIFG));
+    __delay_cycles(10000); // delay 10ms (1MHz -> cycle=1us, 10ms = 10000
+    // set CS low
+    P3OUT &= ~BIT3;
+
+    //write BB1 enable
+    // set CS high
+    P3OUT |= BIT3;
+    __delay_cycles(10000); // delay 10ms (1MHz -> cycle=1us, 10ms = 10000
+    // send address
+    UCB0IFG &= ~UCRXIFG;
+    UCB0TXBUF= 0x00;
+    //wait for completion
+    while(!(UCB0IFG & UCRXIFG));
+    // send 0 to indicate write operation
+    UCB0IFG &= ~UCRXIFG;
+    UCB0TXBUF= 0x00;
+    //wait for completion
+    while(!(UCB0IFG & UCRXIFG));
+    // send value
+    UCB0IFG &= ~UCRXIFG;
+    UCB0TXBUF= 0x05;
+    //wait for completion
+    while(!(UCB0IFG & UCRXIFG));
+    __delay_cycles(10000); // delay 10ms (1MHz -> cycle=1us, 10ms = 10000
+    // set CS low
+    P3OUT &= ~BIT3;
+}
