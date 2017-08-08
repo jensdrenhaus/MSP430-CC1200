@@ -22,7 +22,6 @@
 #include "com.h"
 #include "types.h"
 
-#define SERIAL_MAX_BUF		50
 #define SERIAL_FIX_BUF          19
 
 
@@ -33,7 +32,6 @@
 
 //#############################################################################
 // callback function definition
-//typedef void (*SERIAL_CB)(char* string, com_src_t src);
 typedef void (*SERIAL_CB)(com_frame_t* frame, com_src_t src);
 
 //#############################################################################

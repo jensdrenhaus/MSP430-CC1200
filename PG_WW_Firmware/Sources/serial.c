@@ -17,8 +17,6 @@
 //#############################################################################
 // globals
 
-static char         buf [SERIAL_MAX_BUF];
-static uint8        buf_fix [SERIAL_FIX_BUF];
 static com_frame_t  buf_frame;
 static uint16       rec_buf_cnt;
 static SERIAL_CB    g_callback;

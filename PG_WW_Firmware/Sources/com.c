@@ -30,7 +30,6 @@
 //#############################################################################
 
 static COM_CB   g_com_callback;
-static char     send_str[SERIAL_MAX_BUF];
 static uint8    send_frame[COM_FRAME_LEN];
 com_data_fix_t  receive_data_fix;
 com_frame_t     receive_frame;
