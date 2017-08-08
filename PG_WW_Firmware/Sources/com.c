@@ -32,7 +32,6 @@
 static COM_CB   g_com_callback;
 static char     send_str[SERIAL_MAX_BUF];
 static uint8    send_frame[COM_FRAME_LEN];
-com_data_t      receive_data;
 com_data_fix_t  receive_data_fix;
 com_frame_t     receive_frame;
 
@@ -40,7 +39,6 @@ com_frame_t     receive_frame;
 //#############################################################################
 // private function prototypes
 //#############################################################################
-static void interpreter(char* string, com_src_t src);
 static void interpreter_fix(uint8* frame, com_src_t src);
 
 
@@ -72,26 +70,6 @@ void com_send_fix(com_frame_t* data, com_dest_t dest) {
 }
 
 
-void com_send(com_data_t* data, com_dest_t dest) {
-	switch (data->command){
-	case PAGE:
-		sprintf(send_str, "PAGE %lld \n", data->product_id);
-		break;
-	case WEIGHT:
-		sprintf(send_str, "WEIGHT %lld %lld %.3f \n", data->box_id, data->product_id, data->arg);
-		break;
-	default:
-		strcpy(send_str, "ERROR\n");
-	}
-	if (dest == DEST_SERIAL)
-		serial_send(send_str);
-	if (dest == DEST_RF)
-		rf_send(send_str);
-}
-
-
-
-
 ////////////////////////////////////////////////////////////////////////////
 
 //! PRIVATE interpreter()
@@ -106,44 +84,3 @@ static void interpreter_fix(uint8* frame, com_src_t src){
 	g_com_callback(&receive_frame, src);
 	return;
 }
-
-static void interpreter(char* string, com_src_t src){
-	char *ptr;
-	ptr = strtok(string, " ");
-	if(!strcmp(ptr, "PAGE"))
-		receive_data.command = PAGE;
-	else if(!strcmp(ptr, "WEIGHT"))
-		receive_data.command = WEIGHT;
-	else
-		receive_data.command = NONE;
-
-	switch(receive_data.command){
-	case PAGE:
-	    ptr = strtok(NULL, " ");
-        if(ptr){
-            receive_data.product_id = atoll(ptr);
-            receive_data.box_id     = 0;
-            receive_data.arg        = 0.0;
-        }
-	    break;
-	case WEIGHT:
-	    ptr = strtok(NULL, " ");
-        if(ptr)
-            receive_data.box_id = atoll(ptr);
-        ptr = strtok(NULL, " ");
-        if(ptr)
-            receive_data.product_id = atoll(ptr);
-        ptr = strtok(NULL, " ");
-        if(ptr)
-            receive_data.arg = atof(ptr);
-	    break;
-	default:
-	    receive_data.box_id     = 0;
-	    receive_data.product_id = 0;
-	    receive_data.arg        = 0.0;
-
-	}
-
-	g_com_callback(&receive_data, src);
-}
-

@@ -15,7 +15,6 @@
 
 
 /* array to store elements */
-static com_data_t array[MAX];
 static com_frame_t array_fix[MAX];
 
 /* array pointer */
@@ -64,24 +63,6 @@ queue_status_t queue_insert_fix(com_frame_t* element){
     }
 }
 
-queue_status_t queue_insert(com_data_t* element){
-    if(count == MAX)
-        return OVERFLOW;
-    else {
-        array[rear].command    = element->command;
-        array[rear].box_id     = element->box_id;
-        array[rear].product_id = element->product_id;
-        array[rear].arg        = element->arg;
-
-        rear++;
-        if(rear == MAX)
-            rear = 0;
-        count++;
-
-        return OK;
-    }
-}
-
 
 ////////////////////////////////////////////////////////////////////////////
 
@@ -93,13 +74,6 @@ com_frame_t* queue_first_fix(){
         return NULL;
     else
         return &array_fix[front];
-}
-
-com_data_t* queue_first(){
-    if(count == 0)
-        return NULL;
-    else
-        return &array[front];
 }
 
 

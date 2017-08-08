@@ -38,7 +38,6 @@ uint64         my_product_id = 1;
 //#############################################################################
 // function prototypes
 //#############################################################################
-void data_recieved_event(com_data_t* recieve_data, com_src_t src);
 void data_recieved_fix_event(com_frame_t* receive_frame, com_src_t src);
 void weight_changed_event(int val);
 void button1_pressed_event();
@@ -157,33 +156,9 @@ void data_recieved_fix_event (com_frame_t* receive_frame, com_src_t src) {
 	}
 }
 
-void data_recieved_event (com_data_t* receive_data, com_src_t src) {
-	if(state == active){
-		switch(src){
-		case SRC_RF:
-			if(receive_data->command == PAGE){
-				if(receive_data->product_id == my_product_id){
-					ui_marker_on();
-				    queue_insert(&send_data);
-//					com_send(&send_data, DEST_RF);
-//					ui_marker_off();
-				}
-			}
-			else if(receive_data->command == WEIGHT)
-				com_send(receive_data, DEST_SERIAL);
-			break;
-
-		case SRC_SERIAL:
-			if(receive_data->command == PAGE)
-				com_send(receive_data, DEST_RF);
-			break;
-
-		}
-	}
-}
 
 void weight_changed_event(int val) {
-	send_data.arg = (double)val;
+	send_frame.frame.arg = (double)val;
 }
 
 void button1_pressed_event(){

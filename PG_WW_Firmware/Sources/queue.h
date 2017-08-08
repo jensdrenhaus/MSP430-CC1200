@@ -52,7 +52,6 @@ extern void queue_init();
 |     status: OK, OVERFLOW, UNDERFLOW
 |
  -----------------------------------------------------------------------------*/
-extern queue_status_t queue_insert(com_data_t* element);
 extern queue_status_t queue_insert_fix(com_frame_t* element);
 
 /*------------------------------------------------------------------------------
@@ -65,7 +64,6 @@ extern queue_status_t queue_insert_fix(com_frame_t* element);
 |     pointer to first element
 |
  -----------------------------------------------------------------------------*/
-extern com_data_t* queue_first();
 extern com_frame_t* queue_first_fix();
 
 

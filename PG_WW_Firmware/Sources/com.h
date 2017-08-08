@@ -34,15 +34,7 @@
 //#############################################################################
 typedef enum e_source {SRC_RF, SRC_SERIAL}com_src_t;
 typedef enum e_destination {DEST_RF, DEST_SERIAL}com_dest_t;
-typedef enum e_commands {NONE = 0, PAGE = 1, WEIGHT = 2}com_command_t;
 
-/* structure to hold commands */
-typedef struct s_com_data {
-		com_command_t command;
-		uint64_t      box_id;
-		uint64_t      product_id;
-		double	      arg;
-}com_data_t;
 
 /* structure to hold commands */
 typedef struct s_com_data_fix {
@@ -63,7 +55,6 @@ typedef union u_com_frame{
 //#############################################################################
 // callback function definition
 //#############################################################################
-//typedef void (*COM_CB)(com_data_t* data, com_src_t src);
 typedef void (*COM_CB)(com_frame_t* frame, com_src_t src);
 
 //#############################################################################
@@ -92,7 +83,6 @@ extern void com_init(COM_CB callback);
 |     -
 |
  -----------------------------------------------------------------------------*/
-extern void com_send(com_data_t* data, com_dest_t dest);
 extern void com_send_fix(com_frame_t* data, com_dest_t dest);
 
 
