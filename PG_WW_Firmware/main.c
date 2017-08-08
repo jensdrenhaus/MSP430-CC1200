@@ -30,8 +30,6 @@ typedef enum e_state{active, calibrating_zero, calibrating_load, waiting}state_t
 
 state_t        state      = active;
 uint16         pressed    = 0;
-com_data_t     send_data;
-com_data_fix_t send_data_fix;
 com_frame_t    send_frame;
 uint8          mac[6];
 uint64         my_box_id;
