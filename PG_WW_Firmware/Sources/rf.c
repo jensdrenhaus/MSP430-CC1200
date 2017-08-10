@@ -459,7 +459,7 @@ static rf_status_t get_status(){
 #ifdef PHYNODE
 ////////////////////////////////////////////////////////////////////////////
 
-//!  PORT1.2 ISR for indicating 'TX complete' as well as 'new data arrived'
+//!  PORT1.2 ISR for indicating 'PKT OK' in RX
 //!
 ////////////////////////////////////////////////////////////////////////////
 
@@ -478,7 +478,7 @@ __interrupt void Port_1(void)
     status = spi_cmd_strobe(RF_SRX);
 
     if (rxBuffer[21] & 0b10000000) {            // chech CRC
-        g_callback((rxBuffer), SRC_RF);         // pointer of secound byte, skip length byte
+        g_callback((rxBuffer), SRC_RF);         // pointer of secound byte, skip address byte
     }
 
     P1IFG &= ~BIT2;                             // clear P1.2 interrupt flag
@@ -490,7 +490,7 @@ __interrupt void Port_1(void)
 #else
 ////////////////////////////////////////////////////////////////////////////
 
-//!  PORT3.4 ISR for indicating 'TX complete' as well as 'new data arrived'
+//!  PORT3.4 ISR for indicating 'PKT OK' in RX
 //!
 ////////////////////////////////////////////////////////////////////////////
 
@@ -509,9 +509,9 @@ __interrupt void Port_3(void)
     status = spi_cmd_strobe(RF_SRX);
 
     P3IFG &= ~BIT4;                             // clear P3.4 interrupt flag
-	if (rxBuffer[21] & 0b10000000) {            // chech CRC
-		g_callback((rxBuffer), SRC_RF);         // pointer of secound byte, skip length byte
-	}
+	//if (rxBuffer[21] & 0b10000000) {            // chech CRC
+		g_callback((rxBuffer), SRC_RF);         // pointer of secound byte, skip address byte
+	//}
 
 	P3IFG &= ~BIT4;                             // clear P3.4 interrupt flag
 	P3IE  |= BIT4;                              // Enable Interrupt on P3.4
