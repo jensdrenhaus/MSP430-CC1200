@@ -47,7 +47,7 @@ static const rf_setting_t preferredSettings[]=
   {RF_AGC_CFG2,            0x20},
   {RF_AGC_CFG1,            0x11},
   {RF_AGC_CFG0,            0x9C}, /* 0x94 -> 0x9C RSSI_VALID_CNT = 9*/
-  {RF_FIFO_CFG,            0x00},
+  {RF_FIFO_CFG,            0x80}, /* autoflush RX FIFO when CRC fails */
   {RF_DEV_ADDR,            0x02}, /* initial Dev-Add = 00000010, change in App) */
   {RF_SETTLING_CFG,        0x0B},
   {RF_FS_CFG,              0x12},
@@ -59,8 +59,8 @@ static const rf_setting_t preferredSettings[]=
   {RF_PKT_CFG2,            0x04}, /* CCA_MODE = 001 (RSSI below threshold)*/
   {RF_PKT_CFG1,            0x1B}, /* CRC check, addr check (0x00,0xFF or DEV_ADDR), append status bytes to RX FIFO*/
   {RF_PKT_CFG0,            0x00}, /* Fix Pkt Len*/
-  {RF_RFEND_CFG1,          0x0F},
-  {RF_RFEND_CFG0,          0x00}, /* stay in RX after bad packet */
+  {RF_RFEND_CFG1,          0x0F}, /* IDLE after RX complete, no RX timeout */
+  {RF_RFEND_CFG0,          0x00}, /* IDLE after TX complete, stay in RX after bad packet */
   {RF_PA_CFG1,             0x7F},
   {RF_PA_CFG0,             0x56},
   {RF_ASK_CFG,             0x0F},

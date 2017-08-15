@@ -11,7 +11,7 @@
 #include <stdint.h>
 
 //#define PHYNODE
-#define AP
+//#define AP
 
 #define NULL 0
 
