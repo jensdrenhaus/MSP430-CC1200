@@ -39,6 +39,19 @@ typedef enum e_csma_state {BUSY, SUCCESS}csma_state_t;
 csma_state_t csma_state;
 static uint8 rssi;
 
+
+uint8 rxfirst_A = 0;
+uint8 rxfirst_B = 0;
+uint8 rxlast_A = 0;
+uint8 rxlast_B = 0;
+uint8 num_rxbytes_A = 0;
+uint8 num_rxbytes_B = 0;
+uint8 fifo_num_rxbytes_A = 0;
+uint8 fifo_num_rxbytes_B = 0;
+
+uint8 int_status = 0;
+
+
 //#############################################################################
 // private function prototypes
 static rf_status_t read_reg(uint16 addr, uint8 *data, uint8 len);
@@ -165,6 +178,11 @@ void rf_init(RF_CB callback) {
     writeByte = RF_STD_ADDR;
 #endif
     status = write_reg(RF_DEV_ADDR, &writeByte, 1); // set dev addr
+
+#ifdef AP
+    writeByte = 0x3F;
+    status = write_reg(RF_RFEND_CFG1, &writeByte, 1);
+#endif
 
 	spi_cmd_strobe(RF_SRX);
 
@@ -497,25 +515,39 @@ __interrupt void Port_1(void)
 #pragma vector=PORT3_VECTOR
 __interrupt void Port_3(void)
 {
-	P3IE &= ~BIT4;                              // Disable Interrupt on P3.4
+    uint8 readByte;
+    uint8 status;
 
-	uint8 status;
-	status = read_rx_fifo(rxBuffer, sizeof(rxBuffer));
+	//P3IE &= ~BIT4;                              // Disable Interrupt on P3.4
+    P3IFG &= ~BIT4;                             // clear P3.4 interrupt flag
+
+//    int_status = read_reg(RF_RXFIRST, &rxfirst_A, 1);
+//    int_status = read_reg(RF_RXLAST, &rxlast_A, 1);
+//    int_status = read_reg(RF_NUM_RXBYTES, &num_rxbytes_A, 1);
+//    int_status = read_reg(RF_FIFO_NUM_RXBYTES, &fifo_num_rxbytes_A, 1);
+
+    int_status = read_rx_fifo(rxBuffer, sizeof(rxBuffer));
+
 
 	// flush RX-FIFO
-    status = spi_cmd_strobe(RF_SIDLE);
-    status = spi_cmd_strobe(RF_SFRX);
+//    if(rxlast_A >= 84){
+//        status = spi_cmd_strobe(RF_SIDLE);
+//        status = spi_cmd_strobe(RF_SFRX);
+//        status = spi_cmd_strobe(RF_SRX);
+//    }
 
-    status = spi_cmd_strobe(RF_SRX);
+//    int_status = read_reg(RF_RXFIRST, &rxfirst_B, 1);
+//    int_status = read_reg(RF_RXLAST, &rxlast_B, 1);
+//    int_status = read_reg(RF_NUM_RXBYTES, &num_rxbytes_B, 1);
+//    int_status = read_reg(RF_FIFO_NUM_RXBYTES, &fifo_num_rxbytes_B, 1);
 
-    P3IFG &= ~BIT4;                             // clear P3.4 interrupt flag
 	//if (rxBuffer[21] & 0b10000000) {            // chech CRC
 		g_callback((rxBuffer), SRC_RF);         // pointer of secound byte, skip address byte
 	//}
 
-	P3IFG &= ~BIT4;                             // clear P3.4 interrupt flag
-	P3IE  |= BIT4;                              // Enable Interrupt on P3.4
-	P3IFG &= ~BIT4;                             // clear P3.4 interrupt flag
+	//P3IFG &= ~BIT4;                             // clear P3.4 interrupt flag
+	//P3IE  |= BIT4;                              // Enable Interrupt on P3.4
+	//P3IFG &= ~BIT4;                             // clear P3.4 interrupt flag
 
 }
 
