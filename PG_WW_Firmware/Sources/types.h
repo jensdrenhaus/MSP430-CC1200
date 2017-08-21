@@ -10,7 +10,7 @@
 
 #include <stdint.h>
 
-#define PHYNODE
+//#define PHYNODE
 #define AP
 
 #define NULL 0
