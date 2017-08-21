@@ -116,7 +116,7 @@ void main(void) {
 	{
 //		while(!queue_isEmty()){
 //			com_frame_t* tmp = queue_first_fix();
-//			com_send_fix(tmp, DEST_RF);
+//			com_send_fix(tmp, DEST_SERIAL);
 //			queue_delete();
 //			ui_marker_off();
 //		}
@@ -144,6 +144,7 @@ void data_recieved_fix_event (com_frame_t* receive_frame, com_src_t src) {
 				}
 			}
 			else if(receive_frame->frame.command == COM_WEIGHT_CMD)
+			    //queue_insert_fix(receive_frame);
 				com_send_fix(receive_frame, DEST_SERIAL);
 			break;
 

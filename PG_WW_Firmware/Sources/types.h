@@ -10,8 +10,8 @@
 
 #include <stdint.h>
 
-//#define PHYNODE
-//#define AP
+#define PHYNODE
+#define AP
 
 #define NULL 0
 

@@ -19,7 +19,7 @@
 #include "com.h"
 #include "types.h"
 
-#define MAX 4
+#define MAX 20
 
 //#############################################################################
 // datatypes
