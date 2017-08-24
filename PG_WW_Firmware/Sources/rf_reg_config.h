@@ -59,8 +59,8 @@ static const rf_setting_t preferredSettings[]=
   {RF_PKT_CFG2,            0x04}, /* CCA_MODE = 001 (RSSI below threshold)*/
   {RF_PKT_CFG1,            0x1B}, /* CRC check, addr check (0x00,0xFF or DEV_ADDR), append status bytes to RX FIFO*/
   {RF_PKT_CFG0,            0x00}, /* Fix Pkt Len*/
-  {RF_RFEND_CFG1,          0x0F}, /* IDLE after RX complete, no RX timeout */
-  {RF_RFEND_CFG0,          0x00}, /* IDLE after TX complete, stay in RX after bad packet */
+  {RF_RFEND_CFG1,          0x3F}, /* RX after RX complete, no RX timeout */
+  {RF_RFEND_CFG0,          0x30}, /* RX after TX complete, stay in RX after bad packet */
   {RF_PA_CFG1,             0x7F},
   {RF_PA_CFG0,             0x56},
   {RF_ASK_CFG,             0x0F},

@@ -92,7 +92,7 @@ void rf_init(RF_CB callback) {
 
 #ifdef PHYNODE
     //------------------------------------------
-    // configure P1.1 for CC1200 GPIO 2
+    // configure P1.1 for CC1200 GPIO 2 (multi purpose)
     //------------------------------------------
     P1DIR &= ~BIT1;                 // Set P3.5 to input direction
     P1REN |= BIT1;                  // Set P3.5 pullup/down Resistor
@@ -102,7 +102,7 @@ void rf_init(RF_CB callback) {
     P1IFG &= ~BIT1;                 // clear P3.5 interrupt flag
 #else
     //------------------------------------------
-    // configure P3.5 for CC1200 GPIO 2
+    // configure P3.5 for CC1200 GPIO 2 (multi purpose)
     //------------------------------------------
     P3DIR &= ~BIT5;                 // Set P3.5 to input direction
     P3REN |= BIT5;                  // Set P3.5 pullup/down Resistor
@@ -138,7 +138,7 @@ void rf_init(RF_CB callback) {
 
 #ifdef PHYNODE
 	// ------------------------------------
-	// register configuration for CC1200 GPIO 0
+	// register configuration for CC1200 GPIO 0 (PKT OK)
 	// ------------------------------------
 	// signal connected to P1.2 looks like this:
 	//
@@ -154,7 +154,7 @@ void rf_init(RF_CB callback) {
 	P1IFG &= ~BIT2;                 // clear P3.4 interrupt flag
 #else
 	// ------------------------------------
-    // register configuration for CC1200 GPIO 0
+    // register configuration for CC1200 GPIO 0 (PKT OK)
     // ------------------------------------
     // signal connected to P3.4 looks like this:
     //
@@ -179,10 +179,6 @@ void rf_init(RF_CB callback) {
 #endif
     status = write_reg(RF_DEV_ADDR, &writeByte, 1); // set dev addr
 
-#ifdef AP
-    writeByte = 0x3F;
-    status = write_reg(RF_RFEND_CFG1, &writeByte, 1);
-#endif
 
 	spi_cmd_strobe(RF_SRX);
 
@@ -204,7 +200,7 @@ void rf_send_fix(com_frame_t* frame) {
 
 
 #ifdef PHYNODE
-	// Configure CC1200 GPIO 0 Interrupt
+	// Configure CC1200 GPIO 0 Interrupt (PKT_SYNC_RXTX)
 	// no ISR no INT enable just set the right edge select
 	// for chekcing the ISR flag on P1.2 later for end of transmission.
 	// signal connected to P1.2 looks like this:
@@ -217,7 +213,7 @@ void rf_send_fix(com_frame_t* frame) {
 	P1IES |= BIT2;                  // ### falling edge ###
 	P1IFG &= ~BIT2;                 // clear P1.2 interrupt flag
 #else
-	// Configure CC1200 GPIO 0 Interrupt
+	// Configure CC1200 GPIO 0 Interrupt (PKT_SYNC_RXTX)
     // no ISR no INT enable just set the right edge select
     // for chekcing the ISR flag on P3.4 later for end of transmission.
     // signal connected to P3.4 looks like this:
@@ -337,12 +333,6 @@ void rf_send_fix(com_frame_t* frame) {
     status = spi_cmd_strobe(RF_SNOP);
     P1IFG &= ~BIT2;                 // clear P1.2 interrupt flag
 
-    //flush TX FIFO
-    status = spi_cmd_strobe(RF_SIDLE);
-    status = spi_cmd_strobe(RF_SFTX);
-
-    status = spi_cmd_strobe(RF_SRX);
-
     // change GPIO0 signal to indicate RX PKT OK
     P1IFG &= ~BIT2;                 // clear P1.2 interrupt flag
     writeByte = 0x13;               // PKT_CRC_OK
@@ -360,12 +350,6 @@ void rf_send_fix(com_frame_t* frame) {
 	while(!(P3IFG & BIT4));
 	status = spi_cmd_strobe(RF_SNOP);
 	P3IFG &= ~BIT4;                 // clear P3.4 interrupt flag
-
-	//flush TX FIFO
-	status = spi_cmd_strobe(RF_SIDLE);
-	status = spi_cmd_strobe(RF_SFTX);
-
-	status = spi_cmd_strobe(RF_SRX);
 
 	// change GPIO0 signal to indicate RX PKT OK
 	P3IFG &= ~BIT4;                 // clear P3.4 interrupt flag
@@ -484,25 +468,11 @@ static rf_status_t get_status(){
 #pragma vector=PORT1_VECTOR
 __interrupt void Port_1(void)
 {
-    P1IE &= ~BIT2;                              // Disable Interrupt on P1.2
-
-    uint8 status;
-    status = read_rx_fifo(rxBuffer, sizeof(rxBuffer));
-
-    // flush RX-FIFO
-    status = spi_cmd_strobe(RF_SIDLE);
-    status = spi_cmd_strobe(RF_SFRX);
-
-    status = spi_cmd_strobe(RF_SRX);
-
-    if (rxBuffer[21] & 0b10000000) {            // chech CRC
-        g_callback((rxBuffer), SRC_RF);         // pointer of secound byte, skip address byte
-    }
-
-    P1IFG &= ~BIT2;                             // clear P1.2 interrupt flag
-    P1IE  |= BIT2;                              // Enable Interrupt on P1.2
     P1IFG &= ~BIT2;                             // clear P1.2 interrupt flag
 
+    int_status = read_rx_fifo(rxBuffer, sizeof(rxBuffer));
+
+    g_callback((rxBuffer), SRC_RF);         // pointer of secound byte, skip address byte
 }
 
 #else
@@ -515,40 +485,11 @@ __interrupt void Port_1(void)
 #pragma vector=PORT3_VECTOR
 __interrupt void Port_3(void)
 {
-    uint8 readByte;
-    uint8 status;
-
-	//P3IE &= ~BIT4;                              // Disable Interrupt on P3.4
     P3IFG &= ~BIT4;                             // clear P3.4 interrupt flag
-
-//    int_status = read_reg(RF_RXFIRST, &rxfirst_A, 1);
-//    int_status = read_reg(RF_RXLAST, &rxlast_A, 1);
-//    int_status = read_reg(RF_NUM_RXBYTES, &num_rxbytes_A, 1);
-//    int_status = read_reg(RF_FIFO_NUM_RXBYTES, &fifo_num_rxbytes_A, 1);
 
     int_status = read_rx_fifo(rxBuffer, sizeof(rxBuffer));
 
-
-	// flush RX-FIFO
-//    if(rxlast_A >= 84){
-//        status = spi_cmd_strobe(RF_SIDLE);
-//        status = spi_cmd_strobe(RF_SFRX);
-//        status = spi_cmd_strobe(RF_SRX);
-//    }
-
-//    int_status = read_reg(RF_RXFIRST, &rxfirst_B, 1);
-//    int_status = read_reg(RF_RXLAST, &rxlast_B, 1);
-//    int_status = read_reg(RF_NUM_RXBYTES, &num_rxbytes_B, 1);
-//    int_status = read_reg(RF_FIFO_NUM_RXBYTES, &fifo_num_rxbytes_B, 1);
-
-	//if (rxBuffer[21] & 0b10000000) {            // chech CRC
-		g_callback((rxBuffer), SRC_RF);         // pointer of secound byte, skip address byte
-	//}
-
-	//P3IFG &= ~BIT4;                             // clear P3.4 interrupt flag
-	//P3IE  |= BIT4;                              // Enable Interrupt on P3.4
-	//P3IFG &= ~BIT4;                             // clear P3.4 interrupt flag
-
+    g_callback((rxBuffer), SRC_RF);         // pointer of secound byte, skip address byte
 }
 
 #endif
